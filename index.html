@@ -178,12 +178,80 @@ body {
   width: 100%;
   height: 100%;
 }
+
+/* ── SPLASH ── */
+#splash {
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:linear-gradient(160deg,#007B8A 0%,#003F7D 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;transition:opacity .6s ease,transform .6s ease;
+}
+#splash.hide { opacity:0;transform:scale(1.04);pointer-events:none; }
+.splash-logo {
+  width:110px;height:110px;border-radius:28px;
+  box-shadow:0 12px 40px rgba(0,0,0,.35);
+  animation:splashBounce .8s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.splash-name {
+  font-size:1.7rem;font-weight:700;color:#fff;margin-top:22px;letter-spacing:.5px;
+  opacity:0;animation:fadeUp .5s ease .45s forwards;
+}
+.splash-sub {
+  font-size:.82rem;color:rgba(255,255,255,.55);margin-top:6px;
+  opacity:0;animation:fadeUp .5s ease .65s forwards;
+}
+.splash-bar {
+  width:160px;height:3px;background:rgba(255,255,255,.15);
+  border-radius:10px;margin-top:44px;overflow:hidden;
+  opacity:0;animation:fadeUp .3s ease .75s forwards;
+}
+.splash-progress {
+  height:100%;width:0;background:#fff;border-radius:10px;
+  animation:progress 1.1s ease .85s forwards;
+}
+@keyframes splashBounce {
+  0%{opacity:0;transform:scale(.2) rotate(-12deg);}
+  60%{transform:scale(1.08) rotate(2deg);}
+  100%{opacity:1;transform:scale(1) rotate(0);}
+}
+@keyframes fadeUp {
+  from{opacity:0;transform:translateY(14px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes progress {
+  from{width:0;}to{width:100%;}
+}
+/* ── CARDS ANIM ── */
+.menu-card {
+  opacity:0;transform:translateX(-28px);
+}
+.menu-card.show {
+  animation:slideCard .4s ease forwards;
+}
+@keyframes slideCard {
+  from{opacity:0;transform:translateX(-28px);}
+  to{opacity:1;transform:translateX(0);}
+}
+/* ── APP FRAME ── */
+#appFrame { animation:slideUp .3s ease; }
+@keyframes slideUp {
+  from{transform:translateY(36px);opacity:0;}
+  to{transform:translateY(0);opacity:1;}
+}
 </style>
 </head>
 <body>
 
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <img class="splash-logo" src="src="data:image/png;base64,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" alt="SI" alt="SIEA">
+  <div class="splash-name">SIEA Terrain</div>
+  <div class="splash-sub">Fiches d'intervention &amp; comptes rendus</div>
+  <div class="splash-bar"><div class="splash-progress"></div></div>
+</div>
+
 <!-- HOME SCREEN -->
-<div id="homeScreen">
+<div id="homeScreen" style="opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;">
   <img class="app-logo" src="data:image/png;base64,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" alt="SIEA">
   <div class="app-name">SIEA Terrain</div>
   <div class="app-sub">Fiches d'intervention &amp; comptes rendus FTTH</div>
@@ -239,6 +307,28 @@ body {
 </div>
 
 <script>
+
+// ── Splash + animations ──
+window.addEventListener('DOMContentLoaded', () => {
+  const splash = document.getElementById('splash');
+  const home   = document.getElementById('homeScreen');
+  const cards  = document.querySelectorAll('.menu-card');
+
+  // Après 1.8s : cacher le splash et afficher le home
+  setTimeout(() => {
+    splash.classList.add('hide');
+    // Afficher le home
+    home.style.opacity = '1';
+    home.style.transform = 'translateY(0)';
+    // Animer les cartes en décalé
+    cards.forEach((c, i) => {
+      setTimeout(() => c.classList.add('show'), i * 120);
+    });
+    // Supprimer le splash du DOM après transition
+    setTimeout(() => splash.remove(), 700);
+  }, 1800);
+});
+
 // ── App navigation ──
 function openApp(url, title) {
   document.getElementById('appFrame').style.display = 'flex';
