@@ -1,8 +1,9 @@
-const CACHE_NAME = 'siea-terrain-v1';
+const CACHE_NAME = 'siea-terrain-v2';
 const ASSETS = [
   './index.html',
   './fiche_intervention.html',
   './pv_expertise.html',
+  './cr_allcoms.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

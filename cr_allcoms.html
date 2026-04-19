@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloc-Notes CR Rapide Pro</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1f2937"> 
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .card { transition: all 0.3s ease; }
+        .synthesis-font { font-family: 'Menlo', 'Monaco', 'Courier New', monospace; line-height: 1.5; }
+        
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] summary ~ * { animation: sweep .3s ease-in-out; }
+        @keyframes sweep {
+            0%    { opacity: 0; transform: translateY(-10px); }
+            100%  { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+        
+        input[type="checkbox"] { accent-color: #4f46e5; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 flex flex-col min-h-screen">
+
+    <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-20 transition-colors duration-300">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between"> 
+            <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    CR
+                </div>
+                <h1 class="font-bold text-lg hidden sm:block tracking-tight text-gray-700 dark:text-gray-200">
+                    Rapide<span class="text-indigo-600">Report</span>
+                </h1>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button id="themeToggleBtn" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                    <svg id="iconSun" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 24.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                </button>
+                
+                <input type="file" id="importInput" class="hidden" accept=".json">
+                <button id="exportBtn" title="Sauvegarde complète (JSON)" class="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                </button>
+                <button id="importBtn" title="Restaurer une sauvegarde" class="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4 max-w-4xl mx-auto w-full space-y-6">
+        
+        <div id="statusMessage" class="hidden fixed bottom-5 right-5 z-50 px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 translate-y-10 opacity-0 font-medium"></div>
+
+        <section class="card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Éditeur
+                </h2>
+                <span id="calculatedDuration" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-gray-900 px-3 py-1 rounded-full opacity-0 transition-opacity duration-300">
+                    Durée: --h --m
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Titre / Ticket</label>
+                    <input type="text" id="reportTitle" placeholder="Ex: T-45678 - Panne Réseau" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 p-3 transition dark:text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Date</label>
+                    <input type="date" id="reportDate" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-3 dark:text-white">
+                </div>
+                
+                <div class="flex space-x-2">
+                    <div class="w-1/2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Début</label>
+                        <input type="time" id="reportStartTime" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-3 dark:text-white">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Fin</label>
+                        <input type="time" id="reportEndTime" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-3 dark:text-white">
+                    </div>
+                </div>
+
+                <div class="col-span-1 md:col-span-2 grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Emplacement</label>
+                        <div class="relative">
+                            <select id="reportLocation" class="w-full appearance-none rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-3 dark:text-white cursor-pointer">
+                                <option value="">Choisir un lieu...</option>
+                                <option value="BRD">BRD</option>
+                                <option value="BRA">BRA</option>
+                                <option value="BRF">BRF</option>
+                                <option value="BRI">BRI</option>
+                                <option value="BRP">BRP</option>
+                                <option value="BRT">BRT</option>
+                                <option value="NRO">NRO</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-400">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Nb. Soudures</label>
+                        <input type="number" id="reportWelds" min="0" placeholder="0" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-3 dark:text-white">
+                    </div>
+                </div>
+
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition" onclick="document.getElementById('reportNacelle').click()">
+                        <input type="checkbox" id="reportNacelle" class="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer">
+                        <label for="reportNacelle" class="ml-3 text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer select-none flex items-center gap-2">
+                            <span class="text-lg">🏗️</span> Intervention avec Nacelle
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Techniciens</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <input type="text" id="tech1" placeholder="Tech 1" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-2 text-sm dark:text-white">
+                        <input type="text" id="tech2" placeholder="Tech 2" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-2 text-sm dark:text-white">
+                        <input type="text" id="tech3" placeholder="Tech 3" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-2 text-sm dark:text-white">
+                        <input type="text" id="tech4" placeholder="Tech 4" class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-2 text-sm dark:text-white">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Contenu</label>
+                <textarea id="reportContent" rows="8" placeholder="Détails de l'intervention..." class="w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 p-3 dark:text-white"></textarea>
+            </div>
+        </section>
+
+        <div class="flex flex-col md:flex-row gap-3">
+            <button id="synthesisBtn" class="flex-1 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-gray-600 hover:bg-indigo-50 dark:hover:bg-gray-600 font-semibold py-3 px-6 rounded-xl transition shadow-sm flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                Synthèse & Export
+            </button>
+            
+            <button id="saveReportBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                <span id="saveBtnText">Enregistrer</span>
+            </button>
+            
+            <button id="cancelEditBtn" class="hidden px-4 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold hover:bg-gray-300">
+                Annuler
+            </button>
+        </div>
+
+        <section class="card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Historique par Date</h2>
+                <div class="relative w-full sm:w-64">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="Rechercher..." class="pl-10 w-full rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm focus:ring-indigo-500 focus:border-indigo-500 py-2 dark:text-white">
+                </div>
+            </div>
+
+            <div id="reportsListContainer"></div>
+            <div id="noReports" class="hidden flex flex-col items-center justify-center py-10 text-gray-400">
+                <p>Aucun compte rendu trouvé.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mt-auto py-6 text-center text-xs text-gray-400 dark:text-gray-600">
+        <p>Données stockées localement.</p>
+    </footer>
+
+    <div id="synthesisModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-3xl h-[85vh] shadow-2xl flex flex-col transform transition-all">
+            <div class="p-5 border-b dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-indigo-700 dark:text-indigo-400">Export & Partage</h3>
+                <button id="closeSynthesisBtn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="flex-grow p-4 overflow-hidden relative">
+                <textarea id="synthesisContent" class="w-full h-full p-4 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-lg border-0 resize-none synthesis-font text-sm focus:ring-2 focus:ring-indigo-500" readonly></textarea>
+            </div>
+            
+            <div class="p-5 border-t dark:border-gray-700 flex flex-col sm:flex-row justify-end gap-3 flex-wrap">
+                <button id="exportPdfBtn" class="bg-red-600 text-white hover:bg-red-700 font-semibold py-2 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    PDF
+                </button>
+                <button id="exportTxtBtn" class="bg-green-600 text-white hover:bg-green-700 font-semibold py-2 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    .TXT
+                </button>
+                <button id="copySynthesisBtn" class="bg-indigo-600 text-white hover:bg-indigo-700 font-semibold py-2 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                    Copier
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const LOCAL_STORAGE_KEY = 'cr_rapide_data';
+        let reportsCache = []; 
+        let currentReportId = null;
+
+        const $ = (id) => document.getElementById(id);
+        const els = {
+            title: $('reportTitle'),
+            date: $('reportDate'),
+            start: $('reportStartTime'),
+            end: $('reportEndTime'),
+            location: $('reportLocation'), 
+            welds: $('reportWelds'),
+            nacelle: $('reportNacelle'),
+            // NOUVEAU : Les 4 techniciens
+            t1: $('tech1'), t2: $('tech2'), t3: $('tech3'), t4: $('tech4'),
+            content: $('reportContent'),
+            saveBtn: $('saveReportBtn'),
+            saveText: $('saveBtnText'),
+            cancelBtn: $('cancelEditBtn'),
+            listContainer: $('reportsListContainer'),
+            search: $('searchInput'),
+            duration: $('calculatedDuration'),
+            themeBtn: $('themeToggleBtn'),
+            exportBtn: $('exportBtn'),
+            importBtn: $('importBtn'),
+            importInput: $('importInput'),
+            exportTxtBtn: $('exportTxtBtn'),
+            exportPdfBtn: $('exportPdfBtn')
+        };
+
+        function initTheme() {
+            const userTheme = localStorage.getItem('theme');
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (userTheme === 'dark' || (!userTheme && systemTheme)) {
+                document.documentElement.classList.add('dark');
+                $('iconSun').classList.remove('hidden');
+                $('iconMoon').classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                $('iconSun').classList.add('hidden');
+                $('iconMoon').classList.remove('hidden');
+            }
+        }
+        
+        els.themeBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            if(isDark) {
+                $('iconSun').classList.remove('hidden');
+                $('iconMoon').classList.add('hidden');
+            } else {
+                $('iconSun').classList.add('hidden');
+                $('iconMoon').classList.remove('hidden');
+            }
+        });
+
+        function showToast(message, type = 'success') {
+            const toast = $('statusMessage');
+            toast.textContent = message;
+            toast.className = `fixed bottom-5 right-5 z-50 px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 font-medium ${
+                type === 'error' ? 'bg-red-500 text-white' : 'bg-gray-800 dark:bg-white text-white dark:text-gray-900'
+            }`;
+            toast.classList.remove('hidden', 'translate-y-10', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-10', 'opacity-0'), 3000);
+            setTimeout(() => toast.classList.add('hidden'), 3300);
+        }
+
+        function calculateDuration() {
+            const start = els.start.value;
+            const end = els.end.value;
+            if(start && end) {
+                const [h1, m1] = start.split(':').map(Number);
+                const [h2, m2] = end.split(':').map(Number);
+                let diffMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+                if(diffMinutes < 0) diffMinutes += 24 * 60; 
+                const h = Math.floor(diffMinutes / 60);
+                const m = diffMinutes % 60;
+                els.duration.textContent = `Durée: ${h}h ${m < 10 ? '0'+m : m}m`;
+                els.duration.classList.remove('opacity-0');
+            } else {
+                els.duration.classList.add('opacity-0');
+            }
+        }
+
+        function loadReports() {
+            try {
+                const data = localStorage.getItem(LOCAL_STORAGE_KEY);
+                reportsCache = data ? JSON.parse(data) : [];
+                renderList(reportsCache);
+            } catch (e) { console.error(e); }
+        }
+
+        function saveReports() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(reportsCache));
+            renderList(reportsCache);
+        }
+
+        function saveOrUpdate() {
+            const title = els.title.value.trim();
+            const content = els.content.value.trim();
+            if(!title || !content) { showToast("Titre et contenu requis", "error"); return; }
+            const reportData = {
+                id: currentReportId || crypto.randomUUID(),
+                title,
+                date: els.date.value,
+                startTime: els.start.value,
+                endTime: els.end.value,
+                location: els.location.value, 
+                welds: els.welds.value, 
+                nacelle: els.nacelle.checked,
+                // Sauvegarde Techs
+                tech1: els.t1.value, tech2: els.t2.value, tech3: els.t3.value, tech4: els.t4.value,
+                content,
+                updatedAt: new Date().toISOString()
+            };
+            if (currentReportId) {
+                const index = reportsCache.findIndex(r => r.id === currentReportId);
+                if (index !== -1) reportsCache[index] = reportData;
+                showToast("Modifié avec succès");
+            } else {
+                reportsCache.push(reportData);
+                showToast("Créé avec succès");
+            }
+            saveReports();
+            resetForm();
+        }
+
+        function editReport(id) {
+            const report = reportsCache.find(r => r.id === id);
+            if (!report) return;
+            els.title.value = report.title;
+            els.date.value = report.date;
+            els.start.value = report.startTime || '';
+            els.end.value = report.endTime || '';
+            els.location.value = report.location || '';
+            els.welds.value = report.welds || '';
+            els.nacelle.checked = report.nacelle || false;
+            // Charge Techs
+            els.t1.value = report.tech1 || ''; els.t2.value = report.tech2 || '';
+            els.t3.value = report.tech3 || ''; els.t4.value = report.tech4 || '';
+            els.content.value = report.content;
+            currentReportId = report.id;
+            els.saveText.textContent = "Mettre à jour";
+            els.cancelBtn.classList.remove('hidden');
+            els.saveBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            els.saveBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            calculateDuration();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deleteReport(id) {
+            if(confirm("Supprimer définitivement ce compte rendu ?")) {
+                reportsCache = reportsCache.filter(r => r.id !== id);
+                saveReports();
+                if(currentReportId === id) resetForm();
+                showToast("Supprimé");
+            }
+        }
+
+        function resetForm() {
+            currentReportId = null;
+            els.title.value = '';
+            els.date.value = new Date().toISOString().substring(0, 10);
+            els.start.value = '';
+            els.end.value = '';
+            els.location.value = '';
+            els.welds.value = '';
+            els.nacelle.checked = false;
+            els.t1.value = ''; els.t2.value = ''; els.t3.value = ''; els.t4.value = ''; // Reset Techs
+            els.content.value = '';
+            els.saveText.textContent = "Enregistrer";
+            els.cancelBtn.classList.add('hidden');
+            els.duration.classList.add('opacity-0');
+            els.saveBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            els.saveBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+        }
+
+        function renderList(reports) {
+            const container = els.listContainer;
+            container.innerHTML = '';
+            const searchTerm = els.search.value.toLowerCase();
+            
+            const filtered = reports.filter(r => 
+                r.title.toLowerCase().includes(searchTerm) || 
+                r.content.toLowerCase().includes(searchTerm)
+            );
+
+            if (filtered.length === 0) { $('noReports').classList.remove('hidden'); return; }
+            $('noReports').classList.add('hidden');
+
+            if (searchTerm) {
+                const ul = document.createElement('ul');
+                ul.className = 'space-y-3';
+                filtered.forEach(r => ul.appendChild(createReportItem(r)));
+                container.appendChild(ul);
+                return;
+            }
+
+            const groups = {};
+            filtered.forEach(r => {
+                if (!groups[r.date]) groups[r.date] = [];
+                groups[r.date].push(r);
+            });
+
+            const sortedDates = Object.keys(groups).sort((a, b) => new Date(b) - new Date(a));
+
+            sortedDates.forEach((date, index) => {
+                const details = document.createElement('details');
+                details.className = 'group mb-4 bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700';
+                if(index === 0) details.open = true;
+
+                const summary = document.createElement('summary');
+                summary.className = 'cursor-pointer p-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 flex justify-between items-center font-semibold text-gray-700 dark:text-gray-200 select-none';
+                
+                const dateDisplay = new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const count = groups[date].length;
+                
+                summary.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-500 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        <span class="capitalize">${dateDisplay}</span>
+                    </div>
+                    <span class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-full">${count}</span>
+                `;
+
+                const ul = document.createElement('ul');
+                ul.className = 'p-3 space-y-3 border-t dark:border-gray-700';
+                groups[date].sort((a, b) => (b.startTime || '').localeCompare(a.startTime || ''));
+                groups[date].forEach(r => {
+                    ul.appendChild(createReportItem(r));
+                });
+
+                details.appendChild(summary);
+                details.appendChild(ul);
+                container.appendChild(details);
+            });
+        }
+
+        function createReportItem(r) {
+            const li = document.createElement('li');
+            li.className = 'bg-gray-50 dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-gray-800 p-4 rounded-xl border border-transparent hover:border-indigo-200 dark:hover:border-gray-600 transition cursor-pointer';
+            li.onclick = () => editReport(r.id);
+
+            const header = document.createElement('div');
+            header.className = 'flex justify-between items-start';
+            const info = document.createElement('div');
+            const titleEl = document.createElement('h4');
+            titleEl.className = 'font-bold text-gray-800 dark:text-gray-200';
+            titleEl.textContent = r.title; 
+            const metaEl = document.createElement('div');
+            metaEl.className = 'text-xs text-gray-500 mt-1 flex gap-2 flex-wrap items-center';
+            
+            if(r.startTime) {
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'flex items-center gap-1 font-mono text-indigo-600 dark:text-indigo-400';
+                timeSpan.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ${r.startTime} - ${r.endTime}`;
+                metaEl.appendChild(timeSpan);
+            }
+            if(r.location) {
+                const locSpan = document.createElement('span');
+                locSpan.className = 'flex items-center gap-1 font-semibold text-gray-500 dark:text-gray-400 ml-2';
+                locSpan.innerHTML = `📍 ${r.location}`;
+                metaEl.appendChild(locSpan);
+            }
+            if(r.welds) {
+                 const weldSpan = document.createElement('span');
+                weldSpan.className = 'flex items-center gap-1 font-semibold text-orange-600 dark:text-orange-400 ml-2';
+                weldSpan.innerHTML = `🔥 ${r.welds}`;
+                metaEl.appendChild(weldSpan);
+            }
+            if(r.nacelle) {
+                 const nacelleSpan = document.createElement('span');
+                nacelleSpan.className = 'flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400 ml-2 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded text-[10px] uppercase';
+                nacelleSpan.innerHTML = `🏗️ Nacelle`;
+                metaEl.appendChild(nacelleSpan);
+            }
+
+            // Aperçu techniciens
+            const techs = [r.tech1, r.tech2, r.tech3, r.tech4].filter(t => t);
+            if(techs.length > 0) {
+                 const techSpan = document.createElement('span');
+                techSpan.className = 'flex items-center gap-1 text-gray-400 ml-2';
+                techSpan.textContent = `👥 ${techs.length}`;
+                metaEl.appendChild(techSpan);
+            }
+
+            info.appendChild(titleEl);
+            info.appendChild(metaEl);
+
+            const actions = document.createElement('div');
+            actions.className = 'flex gap-2';
+            const delBtn = document.createElement('button');
+            delBtn.className = 'p-2 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg';
+            delBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+            delBtn.onclick = (e) => { e.stopPropagation(); deleteReport(r.id); };
+            actions.appendChild(delBtn);
+            header.appendChild(info);
+            header.appendChild(actions);
+            li.appendChild(header);
+            
+            const preview = document.createElement('p');
+            preview.className = 'text-sm text-gray-500 mt-2 line-clamp-2 dark:text-gray-400';
+            preview.textContent = r.content;
+            li.appendChild(preview);
+            
+            return li;
+        }
+
+        function generateSynthesis() {
+            const title = els.title.value.trim() || "Sans titre";
+            const content = els.content.value.trim();
+            const dateObj = new Date(els.date.value);
+            const dateStr = isNaN(dateObj) ? "Date inconnue" : dateObj.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const start = els.start.value || "--:--";
+            const end = els.end.value || "--:--";
+            const location = els.location.value || "Non spécifié";
+            const welds = els.welds.value || "0";
+            const nacelle = els.nacelle.checked ? "Oui" : "Non";
+            const techs = [els.t1.value, els.t2.value, els.t3.value, els.t4.value].filter(t => t).join(', ');
+
+            if (!content && title === "Sans titre") { showToast("Formulaire vide.", "error"); return; }
+
+            let text = "========================================\n";
+            text += "            RAPPORT D'INTERVENTION        \n";
+            text += "========================================\n\n";
+            text += `Dossier : ${title.toUpperCase()}\n`;
+            text += `Date    : ${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}\n`;
+            text += `Lieu    : ${location}\n`;
+            text += `Horaire : ${start} - ${end}\n`;
+            text += `Soudures: ${welds}\n`;
+            text += `Nacelle : ${nacelle}\n`;
+            if(techs) text += `Équipe  : ${techs}\n`;
+            text += "\n----------------------------------------\n";
+            text += "              DÉTAILS                   \n";
+            text += "----------------------------------------\n\n";
+            text += content;
+            text += "\n\n========================================\n";
+            text += "Fin du rapport.";
+
+            $('synthesisContent').value = text;
+            $('synthesisModal').classList.remove('hidden');
+        }
+
+        async function exportToPdf() {
+            const content = els.content.value;
+            const title = els.title.value || 'Rapport';
+            const dateStr = els.date.value;
+            const nacelleStr = els.nacelle.checked ? "OUI" : "NON";
+            const techs = [els.t1.value, els.t2.value, els.t3.value, els.t4.value].filter(t => t).join(', ');
+            
+            const element = document.createElement('div');
+            element.className = 'p-8 text-gray-800 bg-white';
+            element.style.fontFamily = 'Helvetica, Arial, sans-serif';
+            
+            const safeContent = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                                    .replace(/"/g, "&quot;").replace(/'/g, "&#039;")
+                                    .replace(/\n/g, '<br>');
+
+            let techRow = '';
+            if(techs) {
+                techRow = `<tr><td colspan="2" style="padding: 4px 0; border-top: 1px solid #eee; margin-top:5px; padding-top:8px;"><strong>Équipe :</strong> ${techs}</td></tr>`;
+            }
+
+            element.innerHTML = `
+                <div style="border-bottom: 2px solid #4f46e5; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h1 style="color: #4f46e5; font-size: 24px; margin: 0;">Rapport d'Intervention</h1>
+                    <p style="color: #666; font-size: 14px; margin: 5px 0 0;">Généré par RapideReport</p>
+                </div>
+                <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 4px 0;"><strong>Titre :</strong> ${title}</td>
+                            <td style="padding: 4px 0;"><strong>Date :</strong> ${dateStr}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0;"><strong>Lieu :</strong> ${els.location.value || 'Non spécifié'}</td>
+                            <td style="padding: 4px 0;"><strong>Horaire :</strong> ${els.start.value} - ${els.end.value}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0; color: #d946ef; font-weight: bold;"><strong>Soudures :</strong> ${els.welds.value || '0'}</td>
+                            <td style="padding: 4px 0;"><strong>Nacelle :</strong> ${nacelleStr}</td>
+                        </tr>
+                        ${techRow}
+                    </table>
+                </div>
+                <div>
+                    <h3 style="border-bottom: 1px solid #ccc; padding-bottom: 5px;">Détails</h3>
+                    <div style="line-height: 1.6; font-size: 14px; margin-top: 10px;">${safeContent}</div>
+                </div>
+            `;
+
+            const opt = {
+                margin:       10,
+                filename:     `CR_${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            showToast("Génération du PDF...", "success");
+            
+            try {
+                await html2pdf().set(opt).from(element).save();
+                showToast("PDF téléchargé !");
+            } catch (e) {
+                console.error(e);
+                showToast("Erreur génération PDF", "error");
+            }
+        }
+
+        async function exportToTxt() {
+            const text = $('synthesisContent').value;
+            const rawTitle = els.title.value.trim() || "rapport";
+            const safeTitle = rawTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase(); 
+            const filename = `CR_${safeTitle}.txt`;
+
+            if (navigator.share && navigator.canShare) {
+                try {
+                    const file = new File([text], filename, { type: 'text/plain' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: rawTitle,
+                            text: 'Voici le fichier du CR.'
+                        });
+                        showToast("Partagé !");
+                        return; 
+                    }
+                } catch (err) { console.log("Partage annulé ou impossible."); }
+            }
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("TXT téléchargé !");
+        }
+
+        window.onload = () => { initTheme(); loadReports(); resetForm(); };
+
+        els.saveBtn.addEventListener('click', saveOrUpdate);
+        els.cancelBtn.addEventListener('click', resetForm);
+        els.start.addEventListener('change', calculateDuration);
+        els.end.addEventListener('change', calculateDuration);
+        els.search.addEventListener('keyup', () => renderList(reportsCache));
+        $('synthesisBtn').addEventListener('click', generateSynthesis);
+        $('closeSynthesisBtn').addEventListener('click', () => $('synthesisModal').classList.add('hidden'));
+        
+        $('copySynthesisBtn').addEventListener('click', () => {
+            $('synthesisContent').select();
+            document.execCommand('copy');
+            showToast('Copié !');
+        });
+
+        els.exportTxtBtn.addEventListener('click', exportToTxt);
+        els.exportPdfBtn.addEventListener('click', exportToPdf);
+
+        function exportData() {
+            const dataStr = JSON.stringify(reportsCache, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const date = new Date().toISOString().slice(0,10);
+            a.href = url; a.download = `backup_cr_${date}.json`; a.click(); URL.revokeObjectURL(url);
+            showToast("Backup téléchargé !");
+        }
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if(Array.isArray(imported)) {
+                        if(confirm(`Remplacer les rapports par les ${imported.length} du fichier ?`)) {
+                            reportsCache = imported; saveReports(); showToast("Restauré !");
+                        }
+                    }
+                } catch(err) { showToast("Fichier invalide", "error"); }
+            };
+            reader.readAsText(file); event.target.value = ''; 
+        }
+        els.exportBtn.addEventListener('click', exportData);
+        els.importBtn.addEventListener('click', () => els.importInput.click());
+        els.importInput.addEventListener('change', importData);
+
+    </script>
+</body>
+</html>
