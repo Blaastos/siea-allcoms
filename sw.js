@@ -4,6 +4,7 @@ const ASSETS = [
   './fiche_intervention.html',
   './pv_expertise.html',
   './cr_allcoms.html',
+  './devis_fibre.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
