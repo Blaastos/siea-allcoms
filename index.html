@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#007B8A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SIEA Terrain">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>SIEA – Fiches Terrain</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:   #007B8A;
+  --blue:   #003F7D;
+  --orange: #E8500A;
+  --bg:     #F0F3F8;
+  --white:  #FFFFFF;
+  --text:   #1A2332;
+  --muted:  #6B7A8D;
+  --border: #BEC8D4;
+  --sans:   'IBM Plex Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--teal);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HOME SCREEN ── */
+#homeScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 32px 20px;
+  background: linear-gradient(160deg, #007B8A 0%, #003F7D 100%);
+}
+
+.app-logo {
+  width: 90px; height: 90px;
+  border-radius: 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+.app-name {
+  font-size: 1.4rem; font-weight: 700; color: #fff;
+  margin-bottom: 4px; letter-spacing: .5px;
+}
+.app-sub {
+  font-size: .82rem; color: rgba(255,255,255,.6);
+  margin-bottom: 40px; text-align: center;
+}
+
+.menu-cards {
+  width: 100%; max-width: 420px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+.menu-card {
+  background: rgba(255,255,255,.12);
+  border: 1.5px solid rgba(255,255,255,.2);
+  border-radius: 16px;
+  padding: 20px 22px;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; gap: 16px;
+  backdrop-filter: blur(8px);
+  text-decoration: none;
+}
+.menu-card:hover, .menu-card:active {
+  background: rgba(255,255,255,.22);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+
+.menu-card-icon {
+  font-size: 2rem;
+  width: 52px; height: 52px;
+  background: rgba(255,255,255,.15);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.menu-card-info { flex: 1; }
+.menu-card-title {
+  font-size: .95rem; font-weight: 700; color: #fff;
+  margin-bottom: 3px;
+}
+.menu-card-sub {
+  font-size: .72rem; color: rgba(255,255,255,.6);
+  line-height: 1.4;
+}
+.menu-card-arrow {
+  font-size: 1.1rem; color: rgba(255,255,255,.4);
+}
+
+.install-banner {
+  margin-top: 32px;
+  background: rgba(232,80,10,.25);
+  border: 1.5px solid rgba(232,80,10,.4);
+  border-radius: 12px;
+  padding: 12px 18px;
+  width: 100%; max-width: 420px;
+  text-align: center;
+  font-size: .75rem; color: rgba(255,255,255,.85);
+  line-height: 1.5;
+  display: none;
+}
+.install-banner.show { display: block; }
+.install-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background: var(--orange);
+  color: #fff;
+  border: none; border-radius: 8px;
+  padding: 8px 20px;
+  font-family: var(--sans); font-size: .78rem; font-weight: 700;
+  cursor: pointer;
+}
+
+.offline-badge {
+  margin-top: 16px;
+  font-size: .65rem;
+  color: rgba(255,255,255,.4);
+  display: flex; align-items: center; gap: 5px;
+}
+.offline-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #4CAF50;
+}
+
+/* ── APP FRAME ── */
+#appFrame {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  flex-direction: column;
+  background: #F0F3F8;
+  z-index: 100;
+}
+
+.frame-topbar {
+  background: var(--teal);
+  display: flex; align-items: center;
+  padding: 10px 14px;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-top: max(10px, env(safe-area-inset-top));
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.frame-back {
+  background: rgba(255,255,255,.15);
+  border: none; border-radius: 8px;
+  color: #fff; font-size: .85rem; font-weight: 700;
+  padding: 6px 12px; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+  white-space: nowrap;
+}
+.frame-back:active { background: rgba(255,255,255,.25); }
+.frame-title {
+  font-size: .85rem; font-weight: 700; color: #fff;
+  flex: 1; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+#appIframe {
+  flex: 1;
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+</style>
+</head>
+<body>
+
+<!-- HOME SCREEN -->
+<div id="homeScreen">
+  <img class="app-logo" src="data:image/png;base64,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" alt="SIEA">
+  <div class="app-name">SIEA Terrain</div>
+  <div class="app-sub">Fiches d'intervention &amp; comptes rendus FTTH</div>
+
+  <div class="menu-cards">
+    <div class="menu-card" onclick="openApp('fiche_intervention.html', 'Fiche Intervention')">
+      <div class="menu-card-icon">📋</div>
+      <div class="menu-card-info">
+        <div class="menu-card-title">Fiche Intervention</div>
+        <div class="menu-card-sub">Reprise référentiel technique · Raccordement PBO</div>
+      </div>
+      <div class="menu-card-arrow">›</div>
+    </div>
+
+    <div class="menu-card" onclick="openApp('pv_expertise.html', 'Compte rendu FTTH')">
+      <div class="menu-card-icon">✍️</div>
+      <div class="menu-card-info">
+        <div class="menu-card-title">Compte rendu d'expertise FTTH</div>
+        <div class="menu-card-sub">PTO · PBO · PM · Signatures · Export PDF</div>
+      </div>
+      <div class="menu-card-arrow">›</div>
+    </div>
+  </div>
+
+  <div class="install-banner" id="installBanner">
+    📲 Installez l'application sur votre écran d'accueil pour l'utiliser hors ligne !
+    <br>
+    <button class="install-btn" id="installBtn" onclick="installPWA()">Installer l'application</button>
+  </div>
+
+  <div class="offline-badge">
+    <div class="offline-dot" id="offlineDot"></div>
+    <span id="offlineLabel">Disponible hors ligne</span>
+  </div>
+</div>
+
+<!-- APP FRAME -->
+<div id="appFrame">
+  <div class="frame-topbar">
+    <button class="frame-back" onclick="closeApp()">‹ Accueil</button>
+    <div class="frame-title" id="frameTitle"></div>
+  </div>
+  <iframe id="appIframe" src="" allow="camera;microphone"></iframe>
+</div>
+
+<script>
+// ── App navigation ──
+function openApp(url, title) {
+  document.getElementById('appFrame').style.display = 'flex';
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('frameTitle').textContent = title;
+  document.getElementById('appIframe').src = url;
+}
+
+function closeApp() {
+  document.getElementById('appFrame').style.display = 'none';
+  document.getElementById('homeScreen').style.display = 'flex';
+  document.getElementById('appIframe').src = '';
+}
+
+// ── Service Worker ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    console.log('SW registered:', reg.scope);
+  }).catch(err => console.log('SW error:', err));
+}
+
+// ── Install prompt ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+function installPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      document.getElementById('installBanner').classList.remove('show');
+    }
+    deferredPrompt = null;
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+// ── Offline status ──
+function updateOnlineStatus() {
+  const dot = document.getElementById('offlineDot');
+  const label = document.getElementById('offlineLabel');
+  if (navigator.onLine) {
+    dot.style.background = '#4CAF50';
+    label.textContent = 'En ligne';
+  } else {
+    dot.style.background = '#E8500A';
+    label.textContent = 'Hors ligne (données locales)';
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ── Handle back gesture on mobile ──
+window.addEventListener('popstate', () => {
+  if (document.getElementById('appFrame').style.display !== 'none') {
+    closeApp();
+  }
+});
+</script>
+</body>
+</html>
