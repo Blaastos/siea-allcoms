@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Devis Fibre Optique – SIEA</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --blue:  #003F7D;
+  --blue2: #4472C4;
+  --org:   #E8500A;
+  --bg:    #F0F3F8;
+  --white: #FFFFFF;
+  --bord:  #BEC8D4;
+  --text:  #1A2332;
+  --muted: #6B7A8D;
+  --inp:   #EEF4FF;
+  --sans:  'IBM Plex Sans', sans-serif;
+  --mono:  'IBM Plex Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden;}
+
+/* ── SIDEBAR ── */
+#mobileToggle{display:none;position:fixed;top:12px;left:12px;background:var(--blue);color:#fff;border:none;width:42px;height:42px;border-radius:8px;font-size:1.3rem;cursor:pointer;z-index:1001;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+#mobileOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:999;}
+#sidebar{width:240px;min-width:240px;background:#1A2332;color:#fff;display:flex;flex-direction:column;min-height:100vh;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:1000;transition:transform .3s;}
+.sb-header{padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,.1);}
+.sb-header h2{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.sb-header p{font-size:.62rem;color:rgba(255,255,255,.45);}
+.sb-search{padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,.08);}
+.sb-search input{width:100%;font-family:var(--sans);font-size:.72rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:5px;padding:5px 8px;color:#fff;outline:none;}
+.sb-search input::placeholder{color:rgba(255,255,255,.35);}
+.sb-list{flex:1;overflow-y:auto;padding:6px 0;}
+.fi{padding:8px 14px;cursor:pointer;border-left:3px solid transparent;transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.fi:hover{background:rgba(255,255,255,.07);}
+.fi.active{background:rgba(0,63,125,.3);border-left-color:#4472C4;}
+.fi-info{min-width:0;flex:1;}
+.fi-title{font-size:.75rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fi-sub{font-size:.6rem;color:rgba(255,255,255,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.fi-del{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.2);font-size:.8rem;padding:1px 3px;border-radius:3px;transition:all .15s;flex-shrink:0;}
+.fi-del:hover{color:#C0392B;background:rgba(192,57,43,.15);}
+.sb-footer{padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);}
+.btn-new{width:100%;font-family:var(--sans);font-size:.73rem;font-weight:700;background:var(--blue2);color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;}
+.btn-new:hover{background:#5585D5;}
+
+/* ── MAIN ── */
+#main{flex:1;padding:16px;min-width:0;overflow-x:hidden;}
+#emptyState{display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;text-align:center;color:var(--muted);}
+#emptyState .ico{font-size:3rem;margin-bottom:14px;}
+#emptyState h3{font-size:1rem;font-weight:600;margin-bottom:6px;color:var(--text);}
+#emptyState p{font-size:.78rem;margin-bottom:18px;}
+
+/* ── ACTIONS ── */
+.act-bar{max-width:700px;margin:0 auto 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.fname{font-family:var(--sans);font-size:.82rem;font-weight:600;border:none;background:transparent;color:var(--blue);border-bottom:2px dashed var(--bord);padding:2px 4px;outline:none;min-width:140px;flex:1;}
+.btn{font-family:var(--sans);font-size:.78rem;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;border:none;transition:all .18s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.btn-p{background:var(--blue);color:#fff;}
+.btn-p:hover{background:var(--blue2);}
+.btn-o{background:var(--white);color:var(--blue);border:1.5px solid var(--blue);}
+.btn-o:hover{background:var(--blue);color:#fff;}
+.btn-d{background:var(--white);color:#C0392B;border:1.5px solid #C0392B;}
+.btn-d:hover{background:#C0392B;color:#fff;}
+
+/* ══ FICHE ══ */
+#fiche{max-width:700px;margin:0 auto;background:var(--white);border-radius:8px;box-shadow:0 3px 18px rgba(0,63,125,.12);overflow:hidden;border-top:5px solid var(--blue);}
+
+/* Header */
+.dv-header{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:2px solid var(--blue);background:var(--white);flex-wrap:wrap;}
+.dv-logos{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.dv-logos img{height:32px;width:auto;object-fit:contain;}
+.dv-htitle{flex:1;text-align:center;font-size:.78rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;line-height:1.3;min-width:0;}
+
+/* Section bar */
+.sbar{background:var(--blue);color:#fff;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:5px 12px;}
+.sbar.org{background:var(--org);}
+.sbar.gray{background:#444;}
+
+/* Champs génériques */
+.section{padding:10px 12px;border-bottom:1px solid var(--bord);}
+.row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:nowrap;}
+.row:last-child{margin-bottom:0;}
+.lbl{font-size:.65rem;font-weight:600;color:var(--text);white-space:nowrap;min-width:0;flex-shrink:0;}
+.inp{font-family:var(--mono);font-size:.75rem;color:var(--text);border:none;border-bottom:1.5px solid var(--bord);background:var(--inp);padding:6px 8px;outline:none;flex:1;border-radius:4px;min-width:0;height:34px;width:100%;}
+.inp:focus{border-bottom-color:var(--blue2);background:#ddeeff;}
+.inp.has-value{border-bottom-color:transparent;}
+textarea.inp{height:auto;min-height:52px;resize:vertical;border:1.5px solid var(--bord);}
+textarea.inp:focus{border-color:var(--blue2);}
+
+/* 2 colonnes sur desktop uniquement */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.col{padding:10px 12px;border-bottom:1px solid var(--bord);}
+.col:first-child{border-right:1px solid var(--bord);}
+
+/* Note */
+.note{background:#FFF9E6;border-bottom:1px solid #E8C400;padding:6px 12px;font-size:.62rem;color:#555;text-align:center;font-style:italic;}
+
+/* Checkboxes */
+.cb-group{display:flex;flex-wrap:wrap;gap:12px;padding:10px 12px;border-bottom:1px solid var(--bord);align-items:flex-start;}
+.cb-item{display:flex;align-items:center;gap:6px;font-size:.72rem;}
+.cb-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--blue);cursor:pointer;flex-shrink:0;}
+.autre-row{display:flex;align-items:center;gap:6px;width:100%;margin-top:4px;}
+.autre-row label{font-size:.68rem;white-space:nowrap;}
+
+/* Table forfaits - mobile cards */
+.forfaits-wrap { border-bottom: 1px solid var(--bord); }
+
+/* Desktop : tableau normal */
+table.ft { width:100%; border-collapse:collapse; }
+table.ft th { background:var(--blue);color:#fff;font-size:.6rem;font-weight:700;text-transform:uppercase;padding:6px 8px;border:1px solid rgba(255,255,255,.2);text-align:center; }
+table.ft td { border:1px solid #ccc;padding:6px 8px;font-size:.68rem;vertical-align:middle; }
+table.ft tr:nth-child(even) td { background:#F5F8FF; }
+table.ft td.pu { text-align:right;font-weight:600;white-space:nowrap;font-family:var(--mono); }
+table.ft td.tot { text-align:right;font-weight:700;font-family:var(--mono);white-space:nowrap; }
+table.ft td.qty { text-align:center;width:70px; }
+table.ft input[type=number] { font-family:var(--mono);font-size:.72rem;width:58px;border:none;border-bottom:1.5px solid var(--bord);background:var(--inp);padding:4px;outline:none;text-align:center;border-radius:3px;height:28px; }
+table.ft input[type=number]:focus { border-bottom-color:var(--blue2); }
+table.ft .mobile-only { display:none; }
+
+/* Mobile : cartes */
+@media (max-width: 768px) {
+  table.ft thead { display:none; }
+  table.ft, table.ft tbody, table.ft tr, table.ft td { display:block; width:100%; }
+  table.ft tr {
+    border: 1px solid #ddd; border-radius:8px;
+    margin:8px 10px; padding:10px;
+    background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.06);
+  }
+  table.ft tr:nth-child(even) { background:#F8FBFF; }
+  table.ft td { border:none; padding:3px 0; font-size:.72rem; }
+  table.ft td.desc { font-weight:500; color:var(--text); padding-bottom:8px; border-bottom:1px solid var(--bord); margin-bottom:6px; }
+  table.ft td.qty, table.ft td.pu, table.ft td.tot {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:4px 0;
+  }
+  table.ft td.qty::before  { content:"Quantité :"; font-size:.65rem; color:var(--muted); font-weight:600; }
+  table.ft td.pu::before   { content:"Prix unit. TTC :"; font-size:.65rem; color:var(--muted); font-weight:600; }
+  table.ft td.tot::before  { content:"Total TTC :"; font-size:.65rem; color:var(--muted); font-weight:600; font-weight:700; }
+  table.ft input[type=number] { width:70px; height:32px; font-size:.8rem; }
+}
+
+/* Totaux */
+.totaux{display:flex;flex-wrap:wrap;border-top:2px solid var(--blue);border-bottom:1px solid var(--bord);}
+.tot-cell{flex:1;padding:8px 10px;border-right:1px solid var(--bord);min-width:120px;}
+.tot-cell:last-child{border-right:none;}
+.tot-lbl{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.tot-val{font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--blue);margin-top:3px;}
+
+/* Devis accepté */
+.dv-acpt{display:flex;flex-wrap:wrap;gap:10px;padding:8px 12px;border-bottom:1px solid var(--bord);align-items:center;}
+.dv-acpt .item{display:flex;align-items:center;gap:6px;font-size:.7rem;}
+.dv-acpt .item input[type=checkbox]{width:16px;height:16px;accent-color:var(--blue);}
+
+/* Accord */
+.accord{padding:8px 12px;border-bottom:1px solid var(--bord);font-size:.62rem;color:#444;line-height:1.6;}
+.accord strong{font-size:.65rem;}
+.oui-non{display:flex;gap:16px;margin:6px 0;}
+.oui-non label{display:flex;align-items:center;gap:5px;font-size:.7rem;}
+
+/* Etat des lieux */
+.edl-grid{display:grid;grid-template-columns:1fr 1fr;}
+.edl-col{padding:10px 12px;}
+.edl-col:first-child{border-right:1px solid var(--bord);}
+.edl-title{font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:8px;}
+.edl-txt{font-size:.6rem;color:#555;line-height:1.5;margin-bottom:8px;}
+
+/* Signatures */
+.sigs{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--bord);}
+.sig-col{padding:8px 12px;}
+.sig-col:first-child{border-right:1px solid var(--bord);}
+.sig-title{font-size:.63rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.sig-canvas{display:block;width:100%;height:72px;border:1.5px dashed var(--bord);border-radius:6px;background:#fafbfd;cursor:crosshair;touch-action:none;}
+.sig-canvas.has-sig{border-color:var(--blue2);border-style:solid;}
+.sig-act{display:flex;gap:6px;margin-top:4px;}
+.sig-btn{font-family:var(--sans);font-size:.6rem;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;border:1.5px solid #aaa;background:var(--bg);color:var(--muted);}
+.sig-btn.clr{border-color:#C0392B;color:#C0392B;}
+.sig-btn.clr:hover{background:#C0392B;color:#fff;}
+
+/* Obs client */
+.obs{padding:8px 12px;border-top:1px solid var(--bord);}
+.obs label{font-size:.63rem;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;}
+.obs textarea{font-family:var(--mono);font-size:.7rem;width:100%;border:1.5px solid var(--bord);border-radius:5px;padding:5px 8px;background:var(--inp);resize:vertical;min-height:48px;outline:none;}
+.obs textarea:focus{border-color:var(--blue2);}
+
+/* ── FORFAIT CARDS ── */
+.forfait-card {
+  border-bottom: 1px solid var(--bord);
+  padding: 10px 12px;
+  background: var(--white);
+}
+.forfait-card:nth-child(even) { background: #F5F8FF; }
+.fc-desc {
+  font-size: .72rem; color: var(--text);
+  line-height: 1.45; margin-bottom: 8px;
+}
+.fc-row {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  align-items: center;
+}
+.fc-field {
+  display: flex; flex-direction: column; gap: 3px;
+}
+.fc-field label {
+  font-size: .58rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted);
+}
+.fc-field input[type=number] {
+  font-family: var(--mono); font-size: .8rem;
+  width: 65px; border: 1.5px solid var(--bord);
+  background: var(--inp); padding: 5px 8px;
+  border-radius: 5px; outline: none; text-align: center;
+  height: 34px;
+}
+.fc-field input[type=number]:focus { border-color: var(--blue2); }
+.fc-pu {
+  font-family: var(--mono); font-size: .78rem;
+  font-weight: 600; color: var(--muted);
+  padding: 5px 0;
+}
+.fc-tot {
+  font-family: var(--mono); font-size: .82rem;
+  font-weight: 700; color: var(--blue);
+  padding: 5px 0; min-width: 70px;
+}
+
+/* ── PRINT ── */
+@media print {
+  body{background:#fff;}
+  #sidebar,#mobileToggle,.act-bar{display:none;}
+  #fiche{box-shadow:none;border-radius:0;max-width:100%;}
+}
+
+/* ── MOBILE ── */
+@media (max-width:768px) {
+  body{display:block;}
+  #mobileToggle{display:block;}
+  #sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:2px 0 12px rgba(0,0,0,.3);}
+  #sidebar.open{transform:translateX(0);}
+  /* Barre en haut fixe pour le bouton hamburger */
+  #main{padding:0 0 8px;width:100%;overflow-x:hidden;}
+  .mobile-topbar{
+    display:flex;align-items:center;gap:10px;
+    background:var(--blue);padding:10px 14px;
+    position:sticky;top:0;z-index:100;
+  }
+  .mobile-topbar-title{color:#fff;font-size:.85rem;font-weight:700;flex:1;text-align:center;}
+  #mobileToggle{position:static;width:36px;height:36px;font-size:1.1rem;box-shadow:none;flex-shrink:0;}
+  .content-wrap{padding:8px;}
+  .act-bar{flex-direction:column;gap:6px;align-items:stretch;}
+  .btn{width:100%;justify-content:center;}
+  /* Tout en 1 colonne sur mobile */
+  .grid2{grid-template-columns:1fr;}
+  .col:first-child{border-right:none;}
+  .edl-grid{grid-template-columns:1fr;}
+  .edl-col:first-child{border-right:none;border-bottom:1px solid var(--bord);}
+  .sigs{grid-template-columns:1fr;}
+  .sig-col:first-child{border-right:none;border-bottom:1px solid var(--bord);}
+  .totaux{flex-direction:column;}
+  .tot-cell{border-right:none;border-bottom:1px solid var(--bord);}
+  .tot-cell:last-child{border-bottom:none;}
+  .row{flex-wrap:wrap;}
+  .lbl{width:100%;margin-bottom:2px;}
+  .inp{width:100%;}
+  .dv-htitle{font-size:.7rem;}
+  /* Forfaits : empiler description + champs sur mobile */
+  table.ft { min-width:unset; width:100%; }
+  table.ft thead tr th:nth-child(2),
+  table.ft thead tr th:nth-child(3),
+  table.ft thead tr th:nth-child(4) { display:none; }
+  table.ft td:nth-child(2),
+  table.ft td:nth-child(3),
+  table.ft td:nth-child(4) { display:none; }
+  table.ft td:first-child { display:flex; flex-direction:column; gap:6px; border:none; border-bottom:1px solid #ddd; padding:8px 10px; }
+  table.ft tr { display:block; }
+  table.ft thead { display:none; }
+  .ft-mobile-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+  .ft-mobile-row label { font-size:.65rem; color:var(--muted); }
+  .ft-mobile-row input[type=number] { width:55px; }
+  .ft-mobile-row .pu-label { font-size:.68rem; color:var(--text); font-weight:600; }
+  .ft-mobile-tot { font-size:.72rem; font-weight:700; color:var(--blue); font-family:var(--mono); }
+  /* CGV toggle */
+  .cgv-toggle-btn{
+    width:100%;padding:10px;background:var(--blue);color:#fff;
+    border:none;font-family:var(--sans);font-size:.78rem;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+    margin-top:2px;
+  }
+  .cgv-body{grid-template-columns:1fr;}
+  .cgv-col2{border-right:none;border-bottom:1px solid var(--bord);}
+  .cgv-section-mobile{display:none;}
+  .cgv-section-mobile.open{display:block;}
+}
+
+/* Table forfaits mobile */
+.ft-mobile-row {
+  display: none;
+  gap: 8px; align-items: center; flex-wrap: wrap;
+  margin-top: 6px; padding-top: 6px;
+  border-top: 1px dashed var(--bord);
+}
+.ft-mobile-row label { font-size:.65rem; color:var(--muted); }
+.ft-mobile-row input[type=number] { width:55px; font-family:var(--mono); font-size:.75rem; border:1.5px solid var(--bord); background:var(--inp); padding:4px 6px; border-radius:4px; outline:none; text-align:center; }
+.ft-mobile-row input[type=number]:focus { border-color:var(--blue2); }
+.pu-label { font-size:.68rem; color:var(--muted); }
+.ft-mobile-tot { font-size:.78rem; font-weight:700; color:var(--blue); font-family:var(--mono); margin-left:auto; }
+.ft-desktop-only { display: table-cell; }
+
+/* Bouton CGV */
+.cgv-toggle {
+  width:100%; padding:10px 14px;
+  background:var(--blue); color:#fff;
+  border:none; font-family:var(--sans); font-size:.78rem; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+  margin-top:2px;
+}
+.cgv-toggle:hover { background:var(--blue2); }
+#cgvContent { display:none; }
+#cgvContent.open { display:block; }
+
+@media (max-width:768px) {
+  .ft-mobile-row { display:flex; }
+  .ft-desktop-only { display:none; }
+  table.ft thead tr th:nth-child(2),
+  table.ft thead tr th:nth-child(3),
+  table.ft thead tr th:nth-child(4) { display:none; }
+}
+.cgv-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--bord);
+  font-size: .6rem;
+  line-height: 1.55;
+  color: #333;
+}
+.cgv-col2 {
+  padding: 10px 12px;
+  border-right: 1px solid var(--bord);
+}
+.cgv-col2:last-child { border-right: none; }
+.cgv-section { margin-bottom: 10px; }
+.cgv-art {
+  font-size: .65rem; font-weight: 700; color: var(--blue);
+  margin-bottom: 4px; border-bottom: 1px solid #dde;
+  padding-bottom: 2px;
+}
+.cgv-sub {
+  font-size: .62rem; font-weight: 700; color: var(--blue2);
+  margin: 4px 0 3px;
+}
+.cgv-body p { margin-bottom: 4px; text-align: justify; }
+.cgv-body strong { color: var(--text); }
+
+@media (max-width: 768px) {
+  .cgv-body { grid-template-columns: 1fr; }
+  .cgv-col2 { border-right: none; border-bottom: 1px solid var(--bord); }
+}
+@media print {
+  .cgv-body { font-size: .55rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sb-header"><h2>📄 Mes devis</h2><p>Sauvegardés en local</p></div>
+  <div class="sb-search"><input type="text" id="searchInput" placeholder="Rechercher…" oninput="renderSidebar()"></div>
+  <div class="sb-list" id="ficheList"></div>
+  <div class="sb-footer"><button class="btn-new" onclick="newFiche()">＋ Nouveau devis</button></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- Barre mobile fixe en haut -->
+  <div class="mobile-topbar" id="mobileTopbar" style="display:none;">
+    <button id="mobileToggle" onclick="toggleSidebar()">☰</button>
+    <div class="mobile-topbar-title">Devis Fibre Optique</div>
+  </div>
+  <div class="content-wrap">
+  <div id="emptyState">
+    <div class="ico">📄</div>
+    <h3>Aucun devis sélectionné</h3>
+    <p>Créez un nouveau devis ou sélectionnez-en un.</p>
+    <button class="btn btn-p" onclick="newFiche()">＋ Nouveau devis</button>
+  </div>
+
+  <div id="ficheEditor" style="display:none;">
+    <div class="act-bar" id="actionsBar">
+      <input type="text" class="fname" id="ficheName" placeholder="Nom du devis…" oninput="onNameChange()">
+      <button class="btn btn-o" onclick="window.print()">🖨 Imprimer</button>
+      <button class="btn btn-p" id="btnPdf" onclick="exportPDF()">📄 PDF</button>
+      <button class="btn btn-d" onclick="deleteCurrent()">🗑 Supprimer</button>
+    </div>
+
+    <div id="fiche">
+
+      <!-- HEADER -->
+      <div class="dv-header">
+        <div class="dv-logos">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAABACAIAAABeLyRFAAAACXBIWXMAAAsSAAALEgHS3X78AAAJwElEQVR42u2be1BU1x3HP+wusMICCwsbBQQEAoKPKKMSFTUakmohajVR2xi1Y3VipTrT2thoxtgkpnZipqk65mlSM81DkhqiJqhBkxCJASOIiIigIoKACz4Q5LWs/YOLPNxl9969ZALZ7/DH4e75nXPu9/zOOb/HueCAAw444IADDjjggAMOiIWTvQ1Mm4uXb/eHuRlcOO0gVw6iw0bg50/EKCvVSouoqaCyFEO5g2iboQ9g2Fi+TiEyhthHRHeVvA1jM0ajxJF6+VBXS6uxjxKttJXip59nwUp276C+loRFUroaFktAOP5DqCrD2CxOdskaVmykKI+rfXVlqKxXiXyADW8CZByg6jLzV0nvzUePj56gCI4d4FoVNZVW6qvdiIphzRbhX2fnvrt1WCM6Jo7V/xDKOzbK1u346bQaaWkmeZvFOp7evLIbjWf/2KMVPf04czF/2YKqd/RIqULtxqK1TJ1rbiYe5fVUNJ4kv0H2UUwmrhuoudrvNNrJifl/5LGn7Gq79ppQSHm7p2pRY5m9jIITFGYLTyJGkvQC506xZQ3b9+HiCpCXRWlRv7M6VC689w2Krvr+5IMAfgHMWGil1du3+G4fVZclDuqlXWSnc/ATXn4f34Fdeu9vW8eu9O4sA9v3AxjKuVpmmeI69r3HpzukswwoFFwq4q1DAssVpSQl9vU92tzWYWnHcHYRCoUn0Qear7PndUwmewfl4c3iNUJ5ZQK3bvZd87lHjfbzN19X48mGN3F24WI+36Z0//XOHVLekYFlYNs6dHqOfsm6Rdyo6Qcs22ZHd7OpQ6MozOVSIYYrXabk3Elqa2Qb19b1ZB7uTy64Oc9wdByhURYlpjwGUJBNSQG6gXh4C89rKik/L8+g6m9SXUVL0y+baCA6BpWKvCwu5OPmgdodF1c5iTYa+xnL1hyWHjBrCe9nMG4axw7wvx00N+HkhAOy7dFdFoOS1S+TtofUD/n4NQLDUSgxtcowqAkzAJqb+PGIFHHdICLvid9eLaf4lDycuXvywMT2DbOqw88STXRVmYhe4+cQP4dNK6mulIdlIHyk4PXYTrRGi7sHk2bh5m6xzQkzaG4k+1sM5Vw3SByb1peZSzs1C4FhfJuCsUWSZ/jBD+JPsFs8t0SeMOaitQLRn+6wleWExbiqhX9NJo7u41rXwMjsZZ3OgBay0qQo+KAQps4xE/z5YpfVSKSFeHRLC8PHihuEiyvT5zPhUXIyuH3LLqIfiANoaebMceuVg4cy40lUKkyt5B8n7RNOfseNapoauvzlZpCbgdIZ1wG4aRh8P8ZWDGXiBuYfQlAEwNH9fPMZBSeIGIVSRcQocjMkEX0+n6Gj8Bsk3qnzYvp8Jv2aw3ukOy+2Ex08lCmzBM348FUqSqxsXxUlFGYTNQalCv8Q1O7iLKWExQDVFWSlAbQaMVQQPgJAH8iFfPFWR6uRdzZTVyuRKb0/m3axalOvn+VtLNfVsu9dEVLJ2yk9J2iom8ZWqQHtNW928suqStuJVEo17ypL2bpeOgWBocQ+zLPbGTWxt1geMV4olJ+n7oYIQVMr168KQZXAcJvVuT2Bl/FFl+cFPwJovND6SrWj84+zc7NdXAwfw19fZflzvUJ02AihkHlItGx+lmAnPPgrcYL37ofVlYLN5+Vrhx19JAWjkceXobvPjgWeiFrNmWzS9vxc/Adr1lh3DBuHmwfAwY+6/3Stkvpa3D0JjuDSWTs8w/T9rJpF6sd2vVhsPL9/hsSFvZUY6204uwrTY7onlHizhoZ6gJAoOVzw/77G5tUcPWDXcH+bxIY3mZTQ1+IUSkZOACgrNm8vtxkhQFyiHC54XiZ5mbQaCQwlLFrqxhpNWDRKJd/s7TNEt9nOgOGK+QrV7c8HBskXVHrrJV5YTkmhXUNfts7ezK+dGDkBpc1KNnlmFwPDLL7aDaB2JzJGvqCS0cj6xWh9eeZfBN8v8VUnJ3IsjeoKGViLeUjkhuvcQcfpTCuV1W5CoUd/RDhdFQpLh5Ad0bsb1ax7Cg8tr3yMh1a0uH8wG9+WJ+s6PFai4HUD53JsclOBH7/uqZrhCqXnCIogJIqC4/dagSp7X/LWDdYvQafn+bdEy3r7Mm02R1LsHUPqBxIFbY91GI1wp8cadwTvX3ef2VCdSgaFqqmkppIXn2ZyIlNEaqgsRIuNDdkOLx2RowEqS/APtVL5TvtMhA2nKLcXiG7D2ZOcPcn3h/jbv0VkW7x8CBxC2cWfu+ERGC7CWR8//V6iFfKM43d/ZuZS1O6czmLheJLfsFXQR09I5M+X31l/kCg4JKrXNFrry7wkyi+Q/jmf/4fmJhaupk/j7glfVcZB244BtTvzkgD0g7lY0AsafRcBoSQuAUj9iGef6ttExz4qFA7afNg2N1B0CiA4Eo1XbxINeHgz709o/Sgt4sUV3K776VRPRriohfhGxSURUiYTjfWC9d3VIZKD6NGTu1vpajchk302h2XxPaVaTCbpiZiUdoNy6lyJlx0Ull/fL0C4h2U5IGceOemC8zJ5tqxEu6gZbO449h3ExPbg0Wc7LYpfKuKHNOm9F5wA8PQhdJho2fEzmLm0I29idg5amqi7KXFs3r7yEe2lY8FqtH4W4kfDhSTInp2ctpD9u1hg173Ii2doakChYGIC/kPQaG3SjKAIFq3l/pF4+vDQb8xXmzoHoK6WK+JNz7shkUHBclgdjyzouCVuCZExFJ+iob7DmO+Gd/9p10xXX2HvTp5IAoifJyS8Tx2z+Dnp7GWonIUQfts8dctLyYKcdEHDhsXe3eI7ET0slpIC6ntMyPr5ox+Mpw+h0TZFv9w0KJ0BNq8yc1fk78stToDtaKhn9zaixzBiPK4DcB1AXAJxPYa8W41cKuT7Ly0uptnLhYKonG9nlJ8nIAyNFxptWz6zE1n5mUyZRfDQn8h4+nov5yxcYWm8DdDUaGtTTbfJSScnnaAIxsULCWlnlw5VMJlobm/t+1TKins8IZXC0dpsx0XLy8UEhOHpg5eujWgnM75m5GgCQmUjNOVt4auhzhq961UOfdK7E6kb2HHQtbZSWWLr6tFohXy2oZymBom9u3virRc2t8bb5vbosmLKilEoePgJ9IEiouM9GHDA8DEd77xrC4c/6/UVY/VrUUuouyHu8oJZ1Nd224RVFtlJS8ZFzbTHLX5pIQqJ7ZcikhKpvc4vD042LaUhUQRFoBsouvmvdlNRwoqNxE3ng61kHpGuaH0cKpuWUt4x8o7h7CrEMWxxeRsbSN4K4OJKc2Nf/0rwJ9HoezEwBECrY1y8eXvru/3U1th7p9QBBxxwwAEHHHDAAfH4P2zwHqrdx8UUAAAAAElFTkSuQmCC" alt="SIeA">
+          <img src="data:image/png;base64,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" alt="Liain">
+        </div>
+        <div class="dv-htitle">Devis d'intervention<br>Maintenance – Fibre Optique</div>
+      </div>
+
+      <!-- CLIENT -->
+      <div class="sbar">Identification et adresse Client</div>
+      <div class="grid2">
+        <div class="col">
+          <div class="row"><span class="lbl">Nom :</span><input class="inp" id="nom" type="text" placeholder="…"></div>
+          <div class="row"><span class="lbl">Prénom :</span><input class="inp" id="prenom" type="text" placeholder="…"></div>
+          <div class="row"><span class="lbl">Adresse :</span><input class="inp" id="adresse" type="text" placeholder="…"></div>
+          <div class="row"><span class="lbl">CP + Commune :</span><input class="inp" id="cp_commune" type="text" placeholder="…"></div>
+          <div class="row"><span class="lbl">Complément :</span><input class="inp" id="complement" type="text" placeholder="N° appt, allée, immeuble…"></div>
+          <div class="row"><span class="lbl">Étage :</span><input class="inp" id="etage" type="text" placeholder="…"></div>
+          <div class="row"><span class="lbl">Tél. :</span><input class="inp" id="tel" type="tel" placeholder="…"></div>
+        </div>
+        <div class="col">
+          <div class="row"><span class="lbl">Date RDV :</span><input class="inp" id="date_rdv" type="date"></div>
+          <div class="row"><span class="lbl">Heure :</span><input class="inp" id="heure_rdv" type="time"></div>
+          <div class="row"><span class="lbl">Entreprise :</span><input class="inp" id="entreprise" type="text" placeholder="…"></div>
+          <div style="margin-top:6px;">
+            <div class="lbl" style="margin-bottom:4px;">Observations :</div>
+            <textarea class="inp" id="observations" placeholder="Adresse différente, remarques…" rows="4"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTE -->
+      <div class="note">Devis gratuit pour réparation immédiate sur place. En cas de réparation différée, le devis sera facturé le coût d'une mobilisation d'un technicien.</div>
+
+      <!-- PRESTATIONS -->
+      <div class="sbar org">Détail des prestations</div>
+      <div class="cb-group">
+        <div class="cb-item"><input type="checkbox" id="cb_depl"><label for="cb_depl">Déplacement CPE et/ou PTO</label></div>
+        <div class="cb-item"><input type="checkbox" id="cb_rep"><label for="cb_rep">Réparation fibre</label></div>
+        <div class="autre-row">
+          <label class="lbl" for="autre_interv">Autre :</label>
+          <input class="inp" id="autre_interv" type="text" placeholder="Préciser…">
+        </div>
+      </div>
+
+      <!-- FORFAITS -->
+      <div class="sbar">Types de forfaits</div>
+      <div id="forfaitsContainer"></div>
+
+      <!-- TOTAUX -->
+      <div class="totaux">
+        <div class="tot-cell"><div class="tot-lbl">TVA (20%)</div><div class="tot-val" id="totalTVA">0,00 €</div></div>
+        <div class="tot-cell"><div class="tot-lbl">Total HT</div><div class="tot-val" id="totalHT">0,00 €</div></div>
+        <div class="tot-cell"><div class="tot-lbl">Total TTC</div><div class="tot-val" id="totalTTC" style="font-size:1rem;">0,00 €</div></div>
+      </div>
+
+      <!-- DEVIS ACCEPTE -->
+      <div class="dv-acpt">
+        <div class="item"><input type="checkbox" id="dv_ok"><label for="dv_ok">Devis accepté</label></div>
+        <div class="item"><input type="checkbox" id="dv_no"><label for="dv_no">Devis refusé</label></div>
+        <div class="item"><input type="checkbox" id="dv_abs"><label for="dv_abs">Absence client titulaire</label></div>
+      </div>
+
+      <!-- ACCORD -->
+      <div class="accord">
+        <strong>Accord préalable & renoncement au droit de rétractation</strong><br>
+        Souhaitez-vous renoncer au délai de rétractation de 14 jours pour démarrer les travaux immédiatement ?
+        <div class="oui-non">
+          <label><input type="checkbox" id="ret_oui"> Oui</label>
+          <label><input type="checkbox" id="ret_non"> Non</label>
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <span class="lbl">Mention "Lu et Approuvé" :</span>
+          <input class="inp" id="mention" type="text" placeholder="Lu et Approuvé">
+        </div>
+      </div>
+
+      <!-- ETAT DES LIEUX -->
+      <div class="sbar">État des lieux de fin de travaux</div>
+      <div class="edl-grid">
+        <div class="edl-col">
+          <div class="edl-title">Technicien</div>
+          <div class="row"><span class="lbl">Nom :</span><input class="inp" id="tech_nom" type="text" placeholder="…"></div>
+          <div class="row"><span class="lbl">À :</span><input class="inp" id="tech_a" type="text" placeholder="…"></div>
+          <div class="row"><span class="lbl">Le :</span><input class="inp" id="tech_le" type="date"></div>
+        </div>
+        <div class="edl-col">
+          <div class="edl-title">Client</div>
+          <div class="edl-txt">Je soussigné que l'état des lieux à la fin des travaux n'appelle pas de réserve(s) de ma part.</div>
+          <div class="row"><span class="lbl">À :</span><input class="inp" id="client_a" type="text" placeholder="…"></div>
+          <div class="row"><span class="lbl">Le :</span><input class="inp" id="client_le" type="date"></div>
+        </div>
+      </div>
+
+      <!-- SIGNATURES -->
+      <div class="sigs">
+        <div class="sig-col">
+          <div class="sig-title">Signature Technicien</div>
+          <canvas id="sig_tech" class="sig-canvas"></canvas>
+          <div class="sig-act"><button class="sig-btn clr" onclick="clearSig('tech')">🗑 Effacer</button></div>
+        </div>
+        <div class="sig-col">
+          <div class="sig-title">Signature Client</div>
+          <canvas id="sig_client" class="sig-canvas"></canvas>
+          <div class="sig-act"><button class="sig-btn clr" onclick="clearSig('client')">🗑 Effacer</button></div>
+        </div>
+      </div>
+
+      <!-- OBS CLIENT -->
+      <div class="obs">
+        <label>Observations client si réserve(s)</label>
+        <textarea id="obs_client" placeholder="…" rows="3"></textarea>
+      </div>
+
+
+      <!-- BOUTON CGV -->
+      <button class="cgv-toggle" onclick="toggleCGV()">
+        <span>📄 Conditions Générales de Prestations de Réparation</span>
+        <span id="cgvArrow">▼</span>
+      </button>
+
+      <!-- PAGE 2 : CGV -->
+      <div id="cgvSection" style="display:none;">
+
+      <div class="cgv-body">
+
+        <div class="cgv-col2">
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 1 – Champ d'application</div>
+            <p><strong>1.1 Le SIEA.</strong> Le Syndicat Intercommunal d'énergie et d'e-communication de l'Ain (ci-après le SIEA) dont le siège se situe au 32 cours de Verdun - CS90208 - 01006 BOURG-EN-BRESSE Cedex Tél: 04 74 45 09 07 www.siea.fr - www.reseau-liain.fr est le Professionnel qui agit dans le contexte des présentes conditions générales.</p>
+            <p>Le <strong>Client</strong> est propriétaire, co-propriétaire ou locataire du local desservi par le Réseau Public Fibre Optique des communes de l'Ain, réseau géré par le SIEA (ci-après le « Réseau »), à l'adresse indiquée en sa qualité d'usager de la Fibre (adresse de la personne physique ou de l'entreprise).</p>
+            <p>Dans le cadre de l'entretien de ce réseau, le SIEA peut être amené à faire réaliser chez le Client un certain nombre de prestations d'intervention notamment de réparation.</p>
+            <p>Les présentes conditions générales régissent les modalités selon lesquelles le Client reçoit l'information précontractuelle légalement requise, y compris lorsqu'il s'agit d'une prestation effectuée à son domicile, à savoir hors établissement, ainsi que les modalités propres à la formation et l'exécution des prestations d'intervention.</p>
+            <p><strong>1.2</strong> Les présentes conditions s'appliquent à l'exclusion de toutes autres conditions, quelles que soient les clauses pouvant figurer sur les documents du Client.</p>
+            <p><strong>1.3</strong> Le Client prend connaissance des présentes conditions avant toute acceptation des conditions à réaliser chez le Client et dans les conditions précisées dans les présentes Conditions générales. La signature du devis vaut ainsi acceptation des présentes conditions générales et forme, avec le devis, le contrat entre le SIEA et le Client.</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 2 – Objet</div>
+            <p>Les présentes conditions couvrent les services de maintenance et de réparation, si des problèmes, si des difficultés, si des dommages surviennent sur le câble afférent à l'usage de la Fibre, le contrat afférant à l'usage de la Fibre, sera mentionné à</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 3 – Conditions préalables de réalisation de la prestation</div>
+            <div class="cgv-sub">3.1 Devis d'intervention</div>
+            <p>La prestation à réaliser est définie et détaillée dans le document « devis d'intervention » réalisé dans les locaux du Client par le Technicien représentant le SIEA.</p>
+            <p>Le devis est gratuit dès lors que les travaux d'intervention s'effectuent immédiatement après et dans les conditions précisées dans les présentes Conditions générales.</p>
+            <p>Le devis sera facturé la somme de 150 Euros TTC dans le cas où le Client ne souhaite pas une réparation immédiate, au titre de la mobilisation du Technicien. Il en sera de même si la personne présente n'est pas habilitée à signer lors du premier rendez-vous le devis d'intervention signé par ce qui oblige à un déplacement supplémentaire du Technicien.</p>
+            <p>Le prix indiqué sur le devis d'intervention est valable pendant une durée maximum d'UN MOIS à compter de sa remise. Au-delà de ce délai, le SIEA n'est plus tenu de sa remise.</p>
+            <p>Le devis d'intervention contient différentes cases correspondant à un type d'intervention. Si nécessaire, le Technicien peut cocher plusieurs cases. Le Technicien précise des interventions avec les clausules nécessaires. Le Technicien précise la somme globale de la prestation à accomplir. Si la personne présente n'est pas le client, le tarif susceptible de préciser une autre ligne de prix avec le tarif unitaire (ou horaire) associé.</p>
+            <p>Les huit premières lignes du devis d'intervention avec les clausules caractéristiques des interventions si nécessaires. Le Technicien précise des interventions complémentaires si nécessaires. Le Technicien précise la somme globale de la prestation à accomplir et ou ajout de pièces si celles-ci sont nécessaires.</p>
+            <p>La prestation peut concerner des travaux d'urgence, de remplacement et ou ajout de pièces si celles-ci sont nécessaires.</p>
+            <p>Pour les Clients personnes physiques, seul le titulaire du contrat afférent à l'usage de la Fibre ou son représentant légal et majeur est autorisé à accepter le devis ou à le décliner. Pour les travaux qui ne sont pas liés à la fibre, si le titulaire n'est pas le Client, le contrat afférant à l'usage de la Fibre, sera mentionné à</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-sub">3.2 – Information sur le droit de rétractation pour les clients consommateurs</div>
+            <p>Les travaux ne pourront commencer qu'après acceptation du devis d'intervention par le Client, sans réserve ni condition, à la formation du contrat.</p>
+            <p>et donnera lieu à l'établissement par le Technicien d'un devis d'intervention modifié qui devra être accepté par le Client.</p>
+            <p><strong>3.2.1.</strong> Dans la mesure où les travaux en cause ont la nature de travaux d'entretien et ou de réparation à réaliser en urgence au local du Client consommateur, le Client exprime par lui, le Client consommateur sollicites par lui, il ne bénéficie pas du droit de rétractation, dans la limite des pièces de rechange et travaux strictement nécessaires pour répondre à l'urgence ainsi constatée, conformément à l'article L. 221-28, 8° du Code de la consommation.</p>
+            <p>Constitue un cas d'urgence le cas ou le Client consommateur a informé par écrit le prestataire du problème de signal (soit que la fibre est dégradée).</p>
+            <p><strong>3.2.2</strong> Dans les cas où des prestations d'intervention ne relevant pas du cas d'urgence visé ci-dessus, le client consommateur dispose d'un délai de 14 jours calendaires à compter de la signature du devis pour exercer son droit de rétractation, sans avoir à motiver sa décision par LRAR. Le Client consommateur peut utiliser le modèle en annexe 2 des présentes conditions ou tout autre écrit équivalent.</p>
+            <p><strong>3.2.3.</strong> Dans les cas où des travaux complémentaires n'ayant pas la nature du cas d'urgence visé ci-dessus, le Client consommateur propose au technicien de convenir et accepter par écrit les services pleinement exécutés avant la fin du délai de rétractation (tel que visé ci-après) ; que l'exécution a commencé après l'accord préalable du Client et son renoncement exprès à son droit de rétractation. Cet accord du Client consommateur et son renoncement exprès à son droit de rétractation sont recueillis par le Technicien avant la réalisation de toute prestation selon les formes prévues en annexe 3 (article L. 221-28, 1° du Code de la consommation).</p>
+            <p>Le client consommateur qui a exercé son droit de rétractation dans les conditions susvisées versé au SIEA le client consommateur dans les conditions dans lesquelles le contrat afférant au service fourni jusqu'à la</p>
+          </div>
+
+        </div>
+
+        <div class="cgv-col2">
+
+          <div class="cgv-section">
+            <div class="cgv-sub">zone "qualité" à quel titre le signataire est autorisé à signer.</div>
+            <p>Les travaux ne pourront commencer qu'après acceptation du devis d'intervention par le Client, sans réserve ni modification et sous-condition à la formation du contrat. et donnera lieu à l'établissement par le Technicien d'un devis d'intervention modifié qui devra être accepté par le Client.</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 4 – Prix et conditions de règlement</div>
+            <p><strong>4.1 Le prix des prestations de services est fixé dans le devis de la prestation.</strong></p>
+            <p>Une facture est adressée au Client après l'exécution de la prestation.</p>
+            <p>Dans le cas où les frais de déplacement doivent être facturés (cf article 3.1 des présentes) quelle que soit leur montant (c'est-à-dire même si le devis n'est pas accepté par le consommateur et que les travaux ne sont pas réalisés), une facture sera remise au Client et recouvrée.</p>
+            <p><strong>4.2</strong> Le prix est payable sur la base d'un titre de recettes émis par la Paierie Départementale de l'Ain.</p>
+            <p><strong>4.3</strong> En cas de retard de paiement des sommes dues par le Client au-delà du délai fixé, des pénalités de retard calculées sur la base du taux d'intérêt légal sur le montant TTC de la prestation sont automatiquement à son encontre sans mise en demeure préalable.</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 5 – Garanties</div>
+            <p>Les garanties légales des vices cachés et de non-conformité sont pleinement applicables, dans leurs conditions légales, en faveur du Client en ce qui concerne les pièces, les éléments et appareils fournis dans le cadre de l'intervention.</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 6 – Réserves – Etat des lieux de fin de travaux</div>
+            <p>Le Client doit signer contradictoirement avec le Technicien l'état des lieux de fin de travaux afin de porter toutes les réserves éventuelles. Dans ce cas, le SIEA s'engage à faire ses meilleurs efforts afin que le Client n'ait plus aucune réserve relative aux travaux.</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 7 – Force majeure</div>
+            <p>Le SIEA ne pourra être tenu responsable ni défaillant pour tout retard ou inexécution consécutif à la survenance d'un cas de force majeure.</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 8 – Médiation</div>
+            <p>Les assureurs respectifs du client et du SIEA seront les médiateurs en cas de nécessité.</p>
+          </div>
+
+          <div class="cgv-section">
+            <div class="cgv-art">Article 9 – Loi applicable</div>
+            <p>Les présentes conditions générales applicables entre le Client et le SIEA seront régies par la Loi française uniquement applicable entre le Client et le SIEA.</p>
+          </div>
+
+        </div>
+
+      </div><!-- /cgv-body -->
+
+    </div><!-- /fiche -->
+  </div>
+</div>
+
+<script>
+// ══ FORFAITS ══
+const FORFAITS = [
+  {id:1,desc:"F1 · 1 tech, 30min (Mobilisation, Soudure, fixation CPE/PTO) — 112,50€ HT",pu:135.00},
+  {id:2,desc:"F2 · 1 tech, 1h (Mobilisation, déplacement CPE/PTO dans limite câble) — 162,50€ HT",pu:195.00},
+  {id:3,desc:"F3 · 1 tech, 2h (Câble à retirer, pose CPE/PTO, mini-dome sans nacelle) — 315€ HT",pu:378.00},
+  {id:4,desc:"F4 · 2 tech, 30min (Câble à retirer, pose CPE/PTO) — 168,33€ HT",pu:202.00},
+  {id:5,desc:"F5 · 2 tech, 1h (Câble à retirer, pose CPE/PTO) — 279,17€ HT",pu:335.00},
+  {id:6,desc:"F6 · 2 tech, 2h (Câble à retirer, pose CPE/PTO) — 500€ HT",pu:600.00},
+  {id:7,desc:"F7 · 2 tech, 1h nacelle (Mini-dome, tirage câble partiel) — 418,33€ HT",pu:502.00},
+  {id:8,desc:"F8 · 2 tech, 2h nacelle (Tirage 2FO, déplacement câble) — 650€ HT",pu:780.00},
+];
+
+function buildTable() {
+  const container = document.getElementById('forfaitsContainer');
+  container.innerHTML = '';
+  FORFAITS.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'forfait-card';
+    div.innerHTML = `
+      <div class="fc-desc">${f.desc}</div>
+      <div class="fc-row">
+        <div class="fc-field">
+          <label>Quantité</label>
+          <input type="number" id="qty_${f.id}" min="0" placeholder="0" oninput="calcTotaux();autoSave()">
+        </div>
+        <div class="fc-field">
+          <label>P.U. TTC</label>
+          <span class="fc-pu">${f.pu.toFixed(2).replace('.',',')} €</span>
+        </div>
+        <div class="fc-field">
+          <label>Total TTC</label>
+          <span class="fc-tot" id="tot_${f.id}">—</span>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function calcTotaux() {
+  let ttc=0;
+  FORFAITS.forEach(f=>{
+    const q=parseFloat(document.getElementById('qty_'+f.id)?.value)||0;
+    const t=q*f.pu;
+    const el=document.getElementById('tot_'+f.id);
+    if(el) el.textContent=q>0?t.toFixed(2).replace('.',',')+' €':'—';
+    ttc+=t;
+  });
+  const ht=ttc/1.2, tva=ttc-ht;
+  document.getElementById('totalTTC').textContent=fmt(ttc);
+  document.getElementById('totalHT').textContent=fmt(ht);
+  document.getElementById('totalTVA').textContent=fmt(tva);
+}
+function fmt(v){return v.toFixed(2).replace('.',',')+' €';}
+
+// ══ STORAGE ══
+const SK='devis_fibre_v2';
+function getAll(){try{return JSON.parse(localStorage.getItem(SK))||{};}catch{return{};}}
+function saveAll(f){localStorage.setItem(SK,JSON.stringify(f));}
+function genId(){return 'dv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);}
+let curId=null;
+
+// ══ SIDEBAR ══
+function renderSidebar(){
+  const fiches=getAll(),q=document.getElementById('searchInput').value.toLowerCase();
+  const list=document.getElementById('ficheList');list.innerHTML='';
+  const ids=Object.keys(fiches).sort((a,b)=>(fiches[b].updatedAt||0)-(fiches[a].updatedAt||0));
+  const fil=ids.filter(id=>!q||(fiches[id].name||'').toLowerCase().includes(q)||(fiches[id].data?.nom||'').toLowerCase().includes(q));
+  if(!fil.length){list.innerHTML='<div style="padding:14px;font-size:.7rem;color:rgba(255,255,255,.3);text-align:center;">Aucun devis</div>';return;}
+  fil.forEach(id=>{
+    const f=fiches[id],div=document.createElement('div');
+    div.className='fi'+(id===curId?' active':'');
+    const date=f.updatedAt?new Date(f.updatedAt).toLocaleDateString('fr-FR'):'';
+    div.innerHTML=`<div class="fi-info" onclick="openFiche('${id}')">
+      <div class="fi-title">${escH(f.name||'Sans titre')}</div>
+      <div class="fi-sub">${escH(f.data?.nom||'—')} · ${date}</div></div>
+      <button class="fi-del" onclick="event.stopPropagation();deleteFiche('${id}')">✕</button>`;
+    list.appendChild(div);
+  });
+}
+
+function newFiche(){
+  const id=genId(),fiches=getAll();
+  fiches[id]={id,name:'Nouveau devis',createdAt:Date.now(),updatedAt:Date.now(),data:null};
+  saveAll(fiches);openFiche(id);closeMobile();
+}
+function openFiche(id){
+  curId=id;const fiches=getAll(),f=fiches[id];if(!f)return;
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('ficheEditor').style.display='';
+  document.getElementById('ficheName').value=f.name||'';
+  clearForm();if(f.data)loadData(f.data);calcTotaux();renderSidebar();closeMobile();
+  setTimeout(()=>{initSig('tech');initSig('client');
+    if(f.data){loadSig('tech',f.data.sig_tech);loadSig('client',f.data.sig_client);}},80);
+}
+function deleteFiche(id){
+  if(!confirm('Supprimer ce devis ?'))return;
+  const fiches=getAll();delete fiches[id];saveAll(fiches);
+  if(curId===id){curId=null;document.getElementById('emptyState').style.display='';document.getElementById('ficheEditor').style.display='none';}
+  renderSidebar();
+}
+function deleteCurrent(){if(curId)deleteFiche(curId);}
+
+// ══ FORM ══
+const TF=['nom','prenom','adresse','cp_commune','complement','etage','tel','date_rdv','heure_rdv','observations','entreprise','autre_interv','mention','tech_nom','tech_a','tech_le','client_a','client_le','obs_client'];
+const CF=['cb_depl','cb_rep','dv_ok','dv_no','dv_abs','ret_oui','ret_non'];
+function clearForm(){
+  TF.forEach(f=>{const e=document.getElementById(f);if(e)e.value='';});
+  CF.forEach(f=>{const e=document.getElementById(f);if(e)e.checked=false;});
+  FORFAITS.forEach(f=>{const e=document.getElementById('qty_'+f.id);if(e)e.value='';});
+  clearSig('tech');clearSig('client');
+}
+function gatherData(){
+  const o={};
+  TF.forEach(f=>o[f]=document.getElementById(f)?.value||'');
+  CF.forEach(f=>o[f]=document.getElementById(f)?.checked||false);
+  o.qtys={};FORFAITS.forEach(f=>o.qtys[f.id]=document.getElementById('qty_'+f.id)?.value||'');
+  o.sig_tech=getSig('tech');o.sig_client=getSig('client');
+  return o;
+}
+function loadData(d){
+  TF.forEach(f=>{const e=document.getElementById(f);if(e)e.value=d[f]||'';});
+  CF.forEach(f=>{const e=document.getElementById(f);if(e)e.checked=d[f]||false;});
+  if(d.qtys)FORFAITS.forEach(f=>{const e=document.getElementById('qty_'+f.id);if(e)e.value=d.qtys[f.id]||'';});
+}
+function autoSave(){
+  if(!curId)return;const fiches=getAll();if(!fiches[curId])return;
+  fiches[curId].data=gatherData();fiches[curId].updatedAt=Date.now();
+  const n=document.getElementById('ficheName').value.trim();if(n)fiches[curId].name=n;
+  saveAll(fiches);renderSidebar();
+}
+function onNameChange(){
+  if(!curId)return;const fiches=getAll();if(!fiches[curId])return;
+  fiches[curId].name=document.getElementById('ficheName').value||'Sans titre';
+  fiches[curId].updatedAt=Date.now();saveAll(fiches);renderSidebar();
+}
+
+// ══ SIGNATURES ══
+const sigs={};
+function initSig(id){
+  const c=document.getElementById('sig_'+id);if(!c)return;
+  const dpr=window.devicePixelRatio||1,rect=c.getBoundingClientRect();
+  c.width=rect.width*dpr;c.height=rect.height*dpr;
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  ctx.strokeStyle='#1A2332';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';
+  let drawing=false,lx=0,ly=0;
+  function pos(e){const r=c.getBoundingClientRect(),s=e.touches?e.touches[0]:e;return{x:s.clientX-r.left,y:s.clientY-r.top};}
+  function start(e){e.preventDefault();drawing=true;const p=pos(e);lx=p.x;ly=p.y;ctx.beginPath();ctx.arc(lx,ly,1,0,Math.PI*2);ctx.fill();}
+  function draw(e){if(!drawing)return;e.preventDefault();const p=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.stroke();lx=p.x;ly=p.y;if(!sigs[id])sigs[id]={};sigs[id].hasSig=true;c.classList.add('has-sig');autoSave();}
+  function end(){drawing=false;}
+  c.addEventListener('mousedown',start);c.addEventListener('mousemove',draw);c.addEventListener('mouseup',end);c.addEventListener('mouseleave',end);
+  c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',draw,{passive:false});c.addEventListener('touchend',end);
+  if(!sigs[id])sigs[id]={};sigs[id].canvas=c;sigs[id].ctx=ctx;
+}
+function clearSig(id){
+  const p=sigs[id];if(!p||!p.canvas)return;
+  p.ctx.clearRect(0,0,p.canvas.width,p.canvas.height);
+  p.hasSig=false;p.canvas.classList.remove('has-sig');autoSave();
+}
+function getSig(id){const p=sigs[id];if(!p||!p.hasSig)return'';return p.canvas.toDataURL('image/png');}
+function loadSig(id,url){
+  if(!url)return;const p=sigs[id];if(!p||!p.canvas)return;
+  const img=new Image();
+  img.onload=()=>{p.ctx.drawImage(img,0,0,p.canvas.getBoundingClientRect().width,p.canvas.getBoundingClientRect().height);p.hasSig=true;p.canvas.classList.add('has-sig');};
+  img.src=url;
+}
+
+// ══ MOBILE ══
+function toggleSidebar(){const s=document.getElementById('sidebar'),o=document.getElementById('mobileOverlay');if(s.classList.contains('open')){s.classList.remove('open');o.style.display='none';}else{s.classList.add('open');o.style.display='block';}}
+function closeMobile(){if(window.innerWidth<=768){document.getElementById('sidebar').classList.remove('open');document.getElementById('mobileOverlay').style.display='none';}}
+
+// ══ TOAST ══
+function toast(msg){let t=document.getElementById('_t');if(!t){t=document.createElement('div');t.id='_t';t.style.cssText='position:fixed;bottom:18px;right:18px;background:#1A2332;color:#fff;padding:9px 16px;border-radius:7px;font-size:.78rem;z-index:9999;transition:opacity .3s;';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2400);}
+function escH(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ══ PDF ══
+async function exportPDF(){
+  const btn=document.getElementById('btnPdf');
+  btn.textContent='⏳…';btn.disabled=true;
+  const bar=document.getElementById('actionsBar');bar.style.display='none';
+  const fiche=document.getElementById('fiche');
+  const PDF_W=750;
+
+  const st=document.createElement('style');st.id='__po';
+  st.textContent=`
+    #fiche{width:${PDF_W}px!important;max-width:${PDF_W}px!important;min-width:${PDF_W}px!important;
+      position:fixed!important;top:0!important;left:0!important;z-index:-9999!important;
+      background:#fff!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;}
+    #fiche .grid2{display:grid!important;grid-template-columns:1fr 1fr!important;}
+    #fiche .col:first-child{border-right:1px solid #BEC8D4!important;border-bottom:none!important;}
+    #fiche .edl-grid{display:grid!important;grid-template-columns:1fr 1fr!important;}
+    #fiche .edl-col:first-child{border-right:1px solid #BEC8D4!important;border-bottom:none!important;}
+    #fiche .sigs{display:grid!important;grid-template-columns:1fr 1fr!important;}
+    #fiche .sig-col:first-child{border-right:1px solid #BEC8D4!important;border-bottom:none!important;}
+    #fiche .totaux{display:flex!important;flex-direction:row!important;}
+    #fiche .tot-cell{border-right:1px solid #BEC8D4!important;border-bottom:none!important;}
+    #fiche .sig-act{display:none!important;}
+    #fiche .row{flex-wrap:nowrap!important;}
+    #fiche .lbl{width:auto!important;}
+    #fiche *{overflow:visible!important;}
+  `;
+  document.head.appendChild(st);
+
+  const reps=[];
+  fiche.querySelectorAll('input[type=text],input[type=date],input[type=time],input[type=tel],textarea').forEach(el=>{
+    const sp=document.createElement('span');sp.className='__pv';
+    sp.style.cssText='font-family:IBM Plex Mono,monospace;font-size:.72rem;color:#1A2332;padding:5px 6px;display:inline-block;min-width:40px;background:#EEF4FF;border-radius:3px;word-break:break-word;white-space:pre-wrap;';
+    sp.textContent=el.value||'';el.before(sp);el.style.display='none';reps.push({el,sp});
+  });
+
+  await new Promise(r=>setTimeout(r,220));
+  try{
+    const {jsPDF}=window.jspdf;
+    const cv=await html2canvas(fiche,{scale:2.2,useCORS:true,backgroundColor:'#ffffff',width:PDF_W,windowWidth:PDF_W,scrollX:0,scrollY:0});
+    const img=cv.toDataURL('image/jpeg',.93),ratio=cv.height/cv.width;
+    const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),M=5,dw=pw-M*2,dh=dw*ratio;
+    if(dh<=ph-M*2){pdf.addImage(img,'JPEG',M,M,dw,dh);}
+    else{let pos=0,rem=dh;while(rem>0){pdf.addImage(img,'JPEG',M,M-pos,dw,dh);rem-=(ph-M*2);pos+=(ph-M*2);if(rem>0)pdf.addPage();}}
+    pdf.save(`devis_${document.getElementById('nom').value||'client'}.pdf`);toast('✅ PDF exporté');
+  }catch(e){toast('❌ '+e.message);console.error(e);}
+  finally{
+    document.getElementById('__po')?.remove();
+    reps.forEach(({el,sp})=>{el.style.display='';sp.remove();});
+    bar.style.display='';btn.textContent='📄 PDF';btn.disabled=false;
+  }
+}
+
+// ══ TOGGLE CGV ══
+function toggleCGV() {
+  const s = document.getElementById('cgvSection');
+  const a = document.getElementById('cgvArrow');
+  const open = s.style.display !== 'none';
+  s.style.display = open ? 'none' : 'block';
+  if(a) a.textContent = open ? '▼' : '▲';
+}
+
+// ══ BOOT ══
+document.addEventListener('DOMContentLoaded',()=>{
+  buildTable();renderSidebar();
+  const fiches=getAll(),ids=Object.keys(fiches).sort((a,b)=>(fiches[b].updatedAt||0)-(fiches[a].updatedAt||0));
+  if(ids.length)openFiche(ids[0]);
+  document.getElementById('fiche').addEventListener('input',()=>{autoSave();calcTotaux();});
+  document.getElementById('fiche').addEventListener('change',()=>{autoSave();calcTotaux();});
+  // Afficher la barre mobile sur petit écran
+  if(window.innerWidth<=768){
+    document.getElementById('mobileTopbar').style.display='flex';
+    document.getElementById('mobileToggle').style.display='block';
+  }
+  window.addEventListener('resize',()=>{
+    const tb=document.getElementById('mobileTopbar');
+    const tog=document.getElementById('mobileToggle');
+    if(window.innerWidth<=768){tb.style.display='flex';tog.style.display='block';}
+    else{tb.style.display='none';tog.style.display='none';}
+  });
+});
+</script>
+</body>
+</html>
