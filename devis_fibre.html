@@ -801,10 +801,25 @@ async function exportPDF(){
   const btn=document.getElementById('btnPdf');
   btn.textContent='⏳…';btn.disabled=true;
   const bar=document.getElementById('actionsBar');bar.style.display='none';
-  const fiche=document.getElementById('fiche');
-  const PDF_W=750;
 
-  const st=document.createElement('style');st.id='__po';
+  // ── Préparer la fiche pour la capture (sans CGV, sans bouton CGV) ──
+  const fiche = document.getElementById('fiche');
+  const PDF_W = 800;
+
+  // Masquer CGV et bouton CGV pour la capture page 1
+  const cgvSection = document.getElementById('cgvSection');
+  const cgvBtn = fiche.querySelector('.cgv-toggle');
+  const cgvSepHR = fiche.querySelector('[style*="page-break"]');
+  const cgvWasClosed = cgvSection.style.display === 'none';
+  cgvSection.style.display = 'none';
+  if(cgvBtn) cgvBtn.style.display = 'none';
+  if(cgvSepHR) cgvSepHR.style.display = 'none';
+
+  // Masquer boutons sig-act
+  fiche.querySelectorAll('.sig-act,.cgv-toggle').forEach(e=>e.style.display='none');
+
+  // CSS override pour layout desktop
+  const st = document.createElement('style'); st.id='__po';
   st.textContent=`
     #fiche{width:${PDF_W}px!important;max-width:${PDF_W}px!important;min-width:${PDF_W}px!important;
       position:fixed!important;top:0!important;left:0!important;z-index:-9999!important;
@@ -817,34 +832,207 @@ async function exportPDF(){
     #fiche .sig-col:first-child{border-right:1px solid #BEC8D4!important;border-bottom:none!important;}
     #fiche .totaux{display:flex!important;flex-direction:row!important;}
     #fiche .tot-cell{border-right:1px solid #BEC8D4!important;border-bottom:none!important;}
-    #fiche .sig-act{display:none!important;}
-    #fiche .row{flex-wrap:nowrap!important;}
-    #fiche .lbl{width:auto!important;}
+    #fiche .fc-row{display:flex!important;flex-direction:row!important;}
+    #fiche .forfait-card{padding:5px 10px!important;}
+    #fiche .fc-desc{font-size:.62rem!important;margin-bottom:4px!important;}
     #fiche *{overflow:visible!important;}
   `;
   document.head.appendChild(st);
 
+  // Remplacer inputs par spans
   const reps=[];
   fiche.querySelectorAll('input[type=text],input[type=date],input[type=time],input[type=tel],textarea').forEach(el=>{
     const sp=document.createElement('span');sp.className='__pv';
-    sp.style.cssText='font-family:IBM Plex Mono,monospace;font-size:.72rem;color:#1A2332;padding:5px 6px;display:inline-block;min-width:40px;background:#EEF4FF;border-radius:3px;word-break:break-word;white-space:pre-wrap;';
+    sp.style.cssText='font-family:IBM Plex Mono,monospace;font-size:.7rem;color:#1A2332;padding:4px 6px;display:inline-block;min-width:30px;background:#EEF4FF;border-radius:3px;word-break:break-word;';
     sp.textContent=el.value||'';el.before(sp);el.style.display='none';reps.push({el,sp});
   });
 
-  await new Promise(r=>setTimeout(r,220));
+  await new Promise(r=>setTimeout(r,200));
+
   try{
     const {jsPDF}=window.jspdf;
-    const cv=await html2canvas(fiche,{scale:2.2,useCORS:true,backgroundColor:'#ffffff',width:PDF_W,windowWidth:PDF_W,scrollX:0,scrollY:0});
-    const img=cv.toDataURL('image/jpeg',.93),ratio=cv.height/cv.width;
     const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),M=5,dw=pw-M*2,dh=dw*ratio;
-    if(dh<=ph-M*2){pdf.addImage(img,'JPEG',M,M,dw,dh);}
-    else{let pos=0,rem=dh;while(rem>0){pdf.addImage(img,'JPEG',M,M-pos,dw,dh);rem-=(ph-M*2);pos+=(ph-M*2);if(rem>0)pdf.addPage();}}
-    pdf.save(`devis_${document.getElementById('nom').value||'client'}.pdf`);toast('✅ PDF exporté');
+    const pw=pdf.internal.pageSize.getWidth();
+    const ph=pdf.internal.pageSize.getHeight();
+    const M=8;
+
+    // ── PAGE 1 : Capture HTML du devis ──
+    const cv=await html2canvas(fiche,{scale:2.5,useCORS:true,backgroundColor:'#ffffff',width:PDF_W,windowWidth:PDF_W,scrollX:0,scrollY:0});
+    const img=cv.toDataURL('image/jpeg',.93);
+    const ratio=cv.height/cv.width;
+    const dw=pw-M*2, dh=dw*ratio;
+
+    if(dh<=ph-M*2){
+      pdf.addImage(img,'JPEG',M,M,dw,dh);
+    } else {
+      const sliceH=ph-M*2;
+      let pos=0,rem=dh;
+      while(rem>0){
+        pdf.addImage(img,'JPEG',M,M-pos,dw,dh);
+        rem-=sliceH;pos+=sliceH;
+        if(rem>0)pdf.addPage();
+      }
+    }
+
+    // ── PAGE 2 : CGV en texte natif jsPDF ──
+    pdf.addPage();
+
+    // En-tête page 2
+    pdf.setFillColor(0,63,125);
+    pdf.rect(0,0,pw,12,'F');
+    pdf.setTextColor(255,255,255);
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica','bold');
+    pdf.text('CONDITIONS GÉNÉRALES DE PRESTATIONS DE RÉPARATION',pw/2,7.5,{align:'center'});
+    pdf.setTextColor(30,35,50);
+
+    let y=18;
+    const lM=10, rM=pw-10;
+    const colW=(pw-22)/2;
+    const col1X=10, col2X=col1X+colW+2;
+
+    const CGV_ARTICLES = [
+      {
+        art:'Article 1 – Champ d\'application',
+        paras:[
+          '1.1 Le SIEA. Le Syndicat Intercommunal d\'énergie et d\'e-communication de l\'Ain (ci-après le SIEA) dont le siège se situe au 32 cours de Verdun - CS90208 - 01006 BOURG-EN-BRESSE Cedex Tél: 04 74 45 09 07 www.siea.fr est le Professionnel qui agit dans le contexte des présentes conditions générales.',
+          'Le Client est propriétaire, co-propriétaire ou locataire du local desservi par le Réseau Public Fibre Optique des communes de l\'Ain, réseau géré par le SIEA, à l\'adresse indiquée en sa qualité d\'usager de la Fibre.',
+          'Dans le cadre de l\'entretien de ce réseau, le SIEA peut être amené à faire réaliser chez le Client un certain nombre de prestations d\'intervention notamment de réparation.',
+          '1.2 Les présentes conditions s\'appliquent à l\'exclusion de toutes autres conditions, quelles que soient les clauses pouvant figurer sur les documents du Client.',
+          '1.3 Le Client prend connaissance des présentes conditions avant toute acceptation. La signature du devis vaut ainsi acceptation des présentes conditions générales et forme, avec le devis, le contrat entre le SIEA et le Client.',
+        ]
+      },
+      {
+        art:'Article 2 – Objet',
+        paras:[
+          'Les présentes conditions couvrent les services de maintenance et de réparation afférents à l\'usage de la Fibre Optique sur le réseau SIEA.',
+        ]
+      },
+      {
+        art:'Article 3 – Conditions préalables de réalisation',
+        paras:[
+          '3.1 Devis d\'intervention. La prestation à réaliser est définie et détaillée dans le document « devis d\'intervention » réalisé dans les locaux du Client par le Technicien représentant le SIEA.',
+          'Le devis est gratuit dès lors que les travaux s\'effectuent immédiatement. Il sera facturé 150 € TTC si le Client ne souhaite pas une réparation immédiate.',
+          'Le prix indiqué est valable pendant UN MOIS à compter de sa remise.',
+          '3.2.1 Dans la mesure où les travaux constituent des travaux d\'entretien et de réparation à réaliser en urgence, le Client ne bénéficie pas du droit de rétractation, conformément à l\'article L. 221-28, 8° du Code de la consommation.',
+          '3.2.2 Dans les autres cas, le client consommateur dispose d\'un délai de 14 jours calendaires à compter de la signature du devis pour exercer son droit de rétractation par LRAR.',
+          '3.2.3 Le Client peut renoncer expressément à son droit de rétractation afin de démarrer les travaux immédiatement, conformément à l\'article L. 221-28, 1° du Code de la consommation.',
+        ]
+      },
+      {
+        art:'Article 4 – Prix et conditions de règlement',
+        paras:[
+          '4.1 Le prix des prestations de services est fixé dans le devis de la prestation. Une facture est adressée au Client après l\'exécution.',
+          '4.2 Le prix est payable sur la base d\'un titre de recettes émis par la Paierie Départementale de l\'Ain.',
+          '4.3 En cas de retard de paiement, des pénalités de retard calculées sur la base du taux d\'intérêt légal sont automatiquement appliquées sans mise en demeure préalable.',
+        ]
+      },
+      {
+        art:'Article 5 – Garanties',
+        paras:[
+          'Les garanties légales des vices cachés et de non-conformité sont pleinement applicables, en faveur du Client, concernant les pièces et appareils fournis dans le cadre de l\'intervention.',
+        ]
+      },
+      {
+        art:'Article 6 – Réserves – État des lieux de fin de travaux',
+        paras:[
+          'Le Client doit signer contradictoirement avec le Technicien l\'état des lieux de fin de travaux afin de porter toutes les réserves éventuelles. Le SIEA s\'engage à faire ses meilleurs efforts afin que le Client n\'ait plus aucune réserve.',
+        ]
+      },
+      {
+        art:'Article 7 – Force majeure',
+        paras:[
+          'Le SIEA ne pourra être tenu responsable ni défaillant pour tout retard ou inexécution consécutif à la survenance d\'un cas de force majeure.',
+        ]
+      },
+      {
+        art:'Article 8 – Médiation',
+        paras:[
+          'Les assureurs respectifs du client et du SIEA seront les médiateurs en cas de nécessité.',
+        ]
+      },
+      {
+        art:'Article 9 – Loi applicable',
+        paras:[
+          'Les présentes conditions générales sont régies par la Loi française uniquement applicable entre le Client et le SIEA.',
+        ]
+      },
+    ];
+
+    // Dessiner les CGV en 2 colonnes
+    function drawCGV(articles, pdf, startY, col1X, col2X, colW) {
+      let y1 = startY, y2 = startY;
+      let col = 0; // 0 = col1, 1 = col2
+
+      articles.forEach(a => {
+        let x = col === 0 ? col1X : col2X;
+        let y = col === 0 ? y1 : y2;
+
+        // Titre article
+        pdf.setFillColor(0,63,125);
+        pdf.rect(x, y, colW, 5, 'F');
+        pdf.setTextColor(255,255,255);
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica','bold');
+        pdf.text(a.art, x+2, y+3.5);
+        y += 6;
+
+        pdf.setTextColor(40,40,40);
+        pdf.setFontSize(5.8);
+        pdf.setFont('helvetica','normal');
+
+        a.paras.forEach(p => {
+          const lines = pdf.splitTextToSize(p, colW-2);
+          const h = lines.length * 3.5;
+          // Si ça dépasse la colonne, changer de colonne
+          if (y + h > ph - 10) {
+            if (col === 0) { col = 1; x = col2X; y = y2; }
+            else {
+              // Nouvelle page
+              pdf.addPage();
+              pdf.setFillColor(0,63,125);
+              pdf.rect(0,0,pw,12,'F');
+              pdf.setTextColor(255,255,255);
+              pdf.setFontSize(9);pdf.setFont('helvetica','bold');
+              pdf.text('CONDITIONS GÉNÉRALES DE PRESTATIONS DE RÉPARATION (suite)',pw/2,7.5,{align:'center'});
+              y1=18;y2=18;y=18;col=0;x=col1X;
+              pdf.setTextColor(40,40,40);pdf.setFontSize(5.8);pdf.setFont('helvetica','normal');
+            }
+          }
+          pdf.text(lines, x+1, y+3);
+          y += h + 1.5;
+        });
+
+        y += 3; // Espace entre articles
+
+        if (col === 0) y1 = y;
+        else y2 = y;
+      });
+    }
+
+    // Ligne de séparation entre les 2 colonnes
+    pdf.setDrawColor(190,200,212);
+    pdf.setLineWidth(0.3);
+    pdf.line(col1X+colW+1, 16, col1X+colW+1, ph-8);
+
+    drawCGV(CGV_ARTICLES, pdf, y, col1X, col2X, colW);
+
+    // Note bas de page 2
+    pdf.setFontSize(6);pdf.setTextColor(100,100,100);pdf.setFont('helvetica','italic');
+    pdf.text('SIEA – Réseau public de fibre optique de l\'Ain – www.reseau-liain.fr',pw/2,ph-4,{align:'center'});
+
+    const nom=document.getElementById('nom').value||'client';
+    pdf.save(`devis_fibre_${nom}.pdf`);
+    toast('✅ PDF exporté — 2 pages');
+
   }catch(e){toast('❌ '+e.message);console.error(e);}
   finally{
     document.getElementById('__po')?.remove();
     reps.forEach(({el,sp})=>{el.style.display='';sp.remove();});
+    fiche.querySelectorAll('.sig-act,.cgv-toggle').forEach(e=>e.style.display='');
+    if(cgvBtn) cgvBtn.style.display='';
+    if(cgvSepHR) cgvSepHR.style.display='';
+    if(!cgvWasClosed) cgvSection.style.display='block';
     bar.style.display='';btn.textContent='📄 PDF';btn.disabled=false;
   }
 }
