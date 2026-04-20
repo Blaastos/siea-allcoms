@@ -106,16 +106,42 @@ textarea.inp:focus{border-color:var(--blue2);}
 .autre-row{display:flex;align-items:center;gap:6px;width:100%;margin-top:4px;}
 .autre-row label{font-size:.68rem;white-space:nowrap;}
 
-/* Table forfaits - mobile first */
-.forfaits-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid var(--bord);}
-table.ft{width:100%;border-collapse:collapse;min-width:500px;}
-table.ft th{background:var(--blue);color:#fff;font-size:.6rem;font-weight:700;text-transform:uppercase;padding:6px 6px;border:1px solid rgba(255,255,255,.2);text-align:center;}
-table.ft td{border:1px solid #ccc;padding:5px 6px;font-size:.62rem;vertical-align:middle;}
-table.ft tr:nth-child(even) td{background:#F5F8FF;}
-table.ft td.pu{text-align:right;font-weight:600;white-space:nowrap;font-family:var(--mono);}
-table.ft td.tot{text-align:right;font-weight:700;font-family:var(--mono);white-space:nowrap;}
-table.ft input[type=number]{font-family:var(--mono);font-size:.7rem;width:52px;border:none;border-bottom:1.5px solid var(--bord);background:var(--inp);padding:3px 4px;outline:none;text-align:center;border-radius:3px;height:26px;}
-table.ft input[type=number]:focus{border-bottom-color:var(--blue2);}
+/* Table forfaits - mobile cards */
+.forfaits-wrap { border-bottom: 1px solid var(--bord); }
+
+/* Desktop : tableau normal */
+table.ft { width:100%; border-collapse:collapse; }
+table.ft th { background:var(--blue);color:#fff;font-size:.6rem;font-weight:700;text-transform:uppercase;padding:6px 8px;border:1px solid rgba(255,255,255,.2);text-align:center; }
+table.ft td { border:1px solid #ccc;padding:6px 8px;font-size:.68rem;vertical-align:middle; }
+table.ft tr:nth-child(even) td { background:#F5F8FF; }
+table.ft td.pu { text-align:right;font-weight:600;white-space:nowrap;font-family:var(--mono); }
+table.ft td.tot { text-align:right;font-weight:700;font-family:var(--mono);white-space:nowrap; }
+table.ft td.qty { text-align:center;width:70px; }
+table.ft input[type=number] { font-family:var(--mono);font-size:.72rem;width:58px;border:none;border-bottom:1.5px solid var(--bord);background:var(--inp);padding:4px;outline:none;text-align:center;border-radius:3px;height:28px; }
+table.ft input[type=number]:focus { border-bottom-color:var(--blue2); }
+table.ft .mobile-only { display:none; }
+
+/* Mobile : cartes */
+@media (max-width: 768px) {
+  table.ft thead { display:none; }
+  table.ft, table.ft tbody, table.ft tr, table.ft td { display:block; width:100%; }
+  table.ft tr {
+    border: 1px solid #ddd; border-radius:8px;
+    margin:8px 10px; padding:10px;
+    background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.06);
+  }
+  table.ft tr:nth-child(even) { background:#F8FBFF; }
+  table.ft td { border:none; padding:3px 0; font-size:.72rem; }
+  table.ft td.desc { font-weight:500; color:var(--text); padding-bottom:8px; border-bottom:1px solid var(--bord); margin-bottom:6px; }
+  table.ft td.qty, table.ft td.pu, table.ft td.tot {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:4px 0;
+  }
+  table.ft td.qty::before  { content:"Quantité :"; font-size:.65rem; color:var(--muted); font-weight:600; }
+  table.ft td.pu::before   { content:"Prix unit. TTC :"; font-size:.65rem; color:var(--muted); font-weight:600; }
+  table.ft td.tot::before  { content:"Total TTC :"; font-size:.65rem; color:var(--muted); font-weight:600; font-weight:700; }
+  table.ft input[type=number] { width:70px; height:32px; font-size:.8rem; }
+}
 
 /* Totaux */
 .totaux{display:flex;flex-wrap:wrap;border-top:2px solid var(--blue);border-bottom:1px solid var(--bord);}
@@ -160,6 +186,47 @@ table.ft input[type=number]:focus{border-bottom-color:var(--blue2);}
 .obs textarea{font-family:var(--mono);font-size:.7rem;width:100%;border:1.5px solid var(--bord);border-radius:5px;padding:5px 8px;background:var(--inp);resize:vertical;min-height:48px;outline:none;}
 .obs textarea:focus{border-color:var(--blue2);}
 
+/* ── FORFAIT CARDS ── */
+.forfait-card {
+  border-bottom: 1px solid var(--bord);
+  padding: 10px 12px;
+  background: var(--white);
+}
+.forfait-card:nth-child(even) { background: #F5F8FF; }
+.fc-desc {
+  font-size: .72rem; color: var(--text);
+  line-height: 1.45; margin-bottom: 8px;
+}
+.fc-row {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  align-items: center;
+}
+.fc-field {
+  display: flex; flex-direction: column; gap: 3px;
+}
+.fc-field label {
+  font-size: .58rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted);
+}
+.fc-field input[type=number] {
+  font-family: var(--mono); font-size: .8rem;
+  width: 65px; border: 1.5px solid var(--bord);
+  background: var(--inp); padding: 5px 8px;
+  border-radius: 5px; outline: none; text-align: center;
+  height: 34px;
+}
+.fc-field input[type=number]:focus { border-color: var(--blue2); }
+.fc-pu {
+  font-family: var(--mono); font-size: .78rem;
+  font-weight: 600; color: var(--muted);
+  padding: 5px 0;
+}
+.fc-tot {
+  font-family: var(--mono); font-size: .82rem;
+  font-weight: 700; color: var(--blue);
+  padding: 5px 0; min-width: 70px;
+}
+
 /* ── PRINT ── */
 @media print {
   body{background:#fff;}
@@ -173,7 +240,16 @@ table.ft input[type=number]:focus{border-bottom-color:var(--blue2);}
   #mobileToggle{display:block;}
   #sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:2px 0 12px rgba(0,0,0,.3);}
   #sidebar.open{transform:translateX(0);}
-  #main{padding:60px 8px 8px;width:100%;overflow-x:hidden;}
+  /* Barre en haut fixe pour le bouton hamburger */
+  #main{padding:0 0 8px;width:100%;overflow-x:hidden;}
+  .mobile-topbar{
+    display:flex;align-items:center;gap:10px;
+    background:var(--blue);padding:10px 14px;
+    position:sticky;top:0;z-index:100;
+  }
+  .mobile-topbar-title{color:#fff;font-size:.85rem;font-weight:700;flex:1;text-align:center;}
+  #mobileToggle{position:static;width:36px;height:36px;font-size:1.1rem;box-shadow:none;flex-shrink:0;}
+  .content-wrap{padding:8px;}
   .act-bar{flex-direction:column;gap:6px;align-items:stretch;}
   .btn{width:100%;justify-content:center;}
   /* Tout en 1 colonne sur mobile */
@@ -190,9 +266,68 @@ table.ft input[type=number]:focus{border-bottom-color:var(--blue2);}
   .lbl{width:100%;margin-bottom:2px;}
   .inp{width:100%;}
   .dv-htitle{font-size:.7rem;}
+  /* Forfaits : empiler description + champs sur mobile */
+  table.ft { min-width:unset; width:100%; }
+  table.ft thead tr th:nth-child(2),
+  table.ft thead tr th:nth-child(3),
+  table.ft thead tr th:nth-child(4) { display:none; }
+  table.ft td:nth-child(2),
+  table.ft td:nth-child(3),
+  table.ft td:nth-child(4) { display:none; }
+  table.ft td:first-child { display:flex; flex-direction:column; gap:6px; border:none; border-bottom:1px solid #ddd; padding:8px 10px; }
+  table.ft tr { display:block; }
+  table.ft thead { display:none; }
+  .ft-mobile-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+  .ft-mobile-row label { font-size:.65rem; color:var(--muted); }
+  .ft-mobile-row input[type=number] { width:55px; }
+  .ft-mobile-row .pu-label { font-size:.68rem; color:var(--text); font-weight:600; }
+  .ft-mobile-tot { font-size:.72rem; font-weight:700; color:var(--blue); font-family:var(--mono); }
+  /* CGV toggle */
+  .cgv-toggle-btn{
+    width:100%;padding:10px;background:var(--blue);color:#fff;
+    border:none;font-family:var(--sans);font-size:.78rem;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+    margin-top:2px;
+  }
+  .cgv-body{grid-template-columns:1fr;}
+  .cgv-col2{border-right:none;border-bottom:1px solid var(--bord);}
+  .cgv-section-mobile{display:none;}
+  .cgv-section-mobile.open{display:block;}
 }
 
-/* ── CGV PAGE 2 ── */
+/* Table forfaits mobile */
+.ft-mobile-row {
+  display: none;
+  gap: 8px; align-items: center; flex-wrap: wrap;
+  margin-top: 6px; padding-top: 6px;
+  border-top: 1px dashed var(--bord);
+}
+.ft-mobile-row label { font-size:.65rem; color:var(--muted); }
+.ft-mobile-row input[type=number] { width:55px; font-family:var(--mono); font-size:.75rem; border:1.5px solid var(--bord); background:var(--inp); padding:4px 6px; border-radius:4px; outline:none; text-align:center; }
+.ft-mobile-row input[type=number]:focus { border-color:var(--blue2); }
+.pu-label { font-size:.68rem; color:var(--muted); }
+.ft-mobile-tot { font-size:.78rem; font-weight:700; color:var(--blue); font-family:var(--mono); margin-left:auto; }
+.ft-desktop-only { display: table-cell; }
+
+/* Bouton CGV */
+.cgv-toggle {
+  width:100%; padding:10px 14px;
+  background:var(--blue); color:#fff;
+  border:none; font-family:var(--sans); font-size:.78rem; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+  margin-top:2px;
+}
+.cgv-toggle:hover { background:var(--blue2); }
+#cgvContent { display:none; }
+#cgvContent.open { display:block; }
+
+@media (max-width:768px) {
+  .ft-mobile-row { display:flex; }
+  .ft-desktop-only { display:none; }
+  table.ft thead tr th:nth-child(2),
+  table.ft thead tr th:nth-child(3),
+  table.ft thead tr th:nth-child(4) { display:none; }
+}
 .cgv-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -231,7 +366,6 @@ table.ft input[type=number]:focus{border-bottom-color:var(--blue2);}
 </head>
 <body>
 
-<button id="mobileToggle" onclick="toggleSidebar()">☰</button>
 <div id="mobileOverlay" onclick="toggleSidebar()"></div>
 
 <!-- SIDEBAR -->
@@ -244,6 +378,12 @@ table.ft input[type=number]:focus{border-bottom-color:var(--blue2);}
 
 <!-- MAIN -->
 <div id="main">
+  <!-- Barre mobile fixe en haut -->
+  <div class="mobile-topbar" id="mobileTopbar" style="display:none;">
+    <button id="mobileToggle" onclick="toggleSidebar()">☰</button>
+    <div class="mobile-topbar-title">Devis Fibre Optique</div>
+  </div>
+  <div class="content-wrap">
   <div id="emptyState">
     <div class="ico">📄</div>
     <h3>Aucun devis sélectionné</h3>
@@ -309,19 +449,7 @@ table.ft input[type=number]:focus{border-bottom-color:var(--blue2);}
 
       <!-- FORFAITS -->
       <div class="sbar">Types de forfaits</div>
-      <div class="forfaits-wrap">
-        <table class="ft">
-          <thead>
-            <tr>
-              <th style="text-align:left;min-width:280px;">Description</th>
-              <th style="width:60px;">Qté</th>
-              <th style="width:80px;">P.U. TTC</th>
-              <th style="width:80px;">Total TTC</th>
-            </tr>
-          </thead>
-          <tbody id="forfaitsBody"></tbody>
-        </table>
-      </div>
+      <div id="forfaitsContainer"></div>
 
       <!-- TOTAUX -->
       <div class="totaux">
@@ -389,9 +517,14 @@ table.ft input[type=number]:focus{border-bottom-color:var(--blue2);}
       </div>
 
 
+      <!-- BOUTON CGV -->
+      <button class="cgv-toggle" onclick="toggleCGV()">
+        <span>📄 Conditions Générales de Prestations de Réparation</span>
+        <span id="cgvArrow">▼</span>
+      </button>
+
       <!-- PAGE 2 : CGV -->
-      <div style="page-break-before:always;"></div>
-      <div class="sbar" style="margin-top:0;">Conditions Générales de Prestations de Réparation</div>
+      <div id="cgvSection" style="display:none;">
 
       <div class="cgv-body">
 
@@ -501,15 +634,29 @@ const FORFAITS = [
 ];
 
 function buildTable() {
-  const tb = document.getElementById('forfaitsBody');
-  tb.innerHTML = '';
+  const container = document.getElementById('forfaitsContainer');
+  container.innerHTML = '';
   FORFAITS.forEach(f => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${f.desc}</td>
-      <td style="text-align:center;"><input type="number" id="qty_${f.id}" min="0" placeholder="0" oninput="calcTotaux();autoSave()"></td>
-      <td class="pu">${f.pu.toFixed(2).replace('.',',')} €</td>
-      <td class="tot" id="tot_${f.id}">—</td>`;
-    tb.appendChild(tr);
+    const div = document.createElement('div');
+    div.className = 'forfait-card';
+    div.innerHTML = `
+      <div class="fc-desc">${f.desc}</div>
+      <div class="fc-row">
+        <div class="fc-field">
+          <label>Quantité</label>
+          <input type="number" id="qty_${f.id}" min="0" placeholder="0" oninput="calcTotaux();autoSave()">
+        </div>
+        <div class="fc-field">
+          <label>P.U. TTC</label>
+          <span class="fc-pu">${f.pu.toFixed(2).replace('.',',')} €</span>
+        </div>
+        <div class="fc-field">
+          <label>Total TTC</label>
+          <span class="fc-tot" id="tot_${f.id}">—</span>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
   });
 }
 
@@ -702,6 +849,15 @@ async function exportPDF(){
   }
 }
 
+// ══ TOGGLE CGV ══
+function toggleCGV() {
+  const s = document.getElementById('cgvSection');
+  const a = document.getElementById('cgvArrow');
+  const open = s.style.display !== 'none';
+  s.style.display = open ? 'none' : 'block';
+  if(a) a.textContent = open ? '▼' : '▲';
+}
+
 // ══ BOOT ══
 document.addEventListener('DOMContentLoaded',()=>{
   buildTable();renderSidebar();
@@ -709,6 +865,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(ids.length)openFiche(ids[0]);
   document.getElementById('fiche').addEventListener('input',()=>{autoSave();calcTotaux();});
   document.getElementById('fiche').addEventListener('change',()=>{autoSave();calcTotaux();});
+  // Afficher la barre mobile sur petit écran
+  if(window.innerWidth<=768){
+    document.getElementById('mobileTopbar').style.display='flex';
+    document.getElementById('mobileToggle').style.display='block';
+  }
+  window.addEventListener('resize',()=>{
+    const tb=document.getElementById('mobileTopbar');
+    const tog=document.getElementById('mobileToggle');
+    if(window.innerWidth<=768){tb.style.display='flex';tog.style.display='block';}
+    else{tb.style.display='none';tog.style.display='none';}
+  });
 });
 </script>
 </body>
