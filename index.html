@@ -21,7 +21,7 @@ input[type=date],input[type=time]{color:#e8f4f8;background:#0a0f1e;}
 </style>
 <style>
 /* ── CR Terrain ── */
-#cr-overlay{display:none;position:fixed;inset:0;z-index:20;background:#0a0f1e;overflow-y:auto;padding-top:52px;padding-bottom:72px;color:#e2e8f0;}
+#cr-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:calc(48px + env(safe-area-inset-bottom,0px));z-index:20;background:#0a0f1e;overflow-y:auto;padding-top:52px;padding-bottom:16px;color:#e2e8f0;}
 #cr-overlay .card{background:#111827;border:1px solid #1e2d4a;border-radius:12px;padding:16px;margin-bottom:14px;}
 #cr-overlay .section-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#2EC4C4;border-left:3px solid #2EC4C4;padding-left:8px;margin-bottom:12px;}
 #cr-overlay .lbl{display:block;font-size:11px;font-weight:700;color:#8ab4cc;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
@@ -1197,8 +1197,46 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+// ── Icône Fibre Optique (canvas, aucun fichier externe requis) ──────────────
+function makeFiberIcon(size){
+  const cv=document.createElement('canvas');
+  cv.width=cv.height=size;
+  const g=cv.getContext('2d');
+  const s=size,cx=s/2,cy=s/2;
+  // Fond dégradé radial bleu nuit
+  const bg=g.createRadialGradient(cx,cy*0.75,0,cx,cy,s*0.6);
+  bg.addColorStop(0,'#0d1f3c');bg.addColorStop(1,'#0a0f1e');
+  g.fillStyle=bg;g.fillRect(0,0,s,s);
+  // Anneau extérieur teal avec halo
+  g.save();g.shadowColor='#2EC4C4';g.shadowBlur=s*0.09;
+  g.strokeStyle='#2EC4C4';g.lineWidth=s*0.05;
+  g.beginPath();g.arc(cx,cy,s*0.34,0,Math.PI*2);g.stroke();g.restore();
+  // 3 brins de fibre ondulés
+  [[-0.115,'#1a6eb5'],[ 0,'#2EC4C4'],[ 0.115,'#1a6eb5']].forEach(([dy,col])=>{
+    g.save();g.strokeStyle=col;g.lineWidth=s*(dy===0?0.038:0.028);
+    g.shadowColor=col;g.shadowBlur=s*0.06;
+    const yB=cy+dy*s,x0=cx-s*0.29,x1=cx+s*0.29;
+    g.beginPath();
+    for(let i=0;i<=28;i++){const t=i/28;const x=x0+t*(x1-x0);const y=yB+Math.sin(t*Math.PI*2.8)*s*0.065;i===0?g.moveTo(x,y):g.lineTo(x,y);}
+    g.stroke();g.restore();
+  });
+  // Point lumineux central (bout de fibre éclairé)
+  const cg=g.createRadialGradient(cx,cy,0,cx,cy,s*0.11);
+  cg.addColorStop(0,'#ffffff');cg.addColorStop(0.45,'#2EC4C4');cg.addColorStop(1,'rgba(46,196,196,0)');
+  g.fillStyle=cg;g.beginPath();g.arc(cx,cy,s*0.11,0,Math.PI*2);g.fill();
+  // Petits éclats lumineux sur le point central
+  g.save();g.shadowColor='#ffffff';g.shadowBlur=s*0.05;
+  g.fillStyle='#ffffff';g.beginPath();g.arc(cx,cy,s*0.03,0,Math.PI*2);g.fill();
+  g.restore();
+  return cv.toDataURL('image/png');
+}
+// Génération des icônes et injection dans le DOM
+const _ic192=makeFiberIcon(192);
+const _ic512=makeFiberIcon(512);
+// apple-touch-icon pour iOS Safari (ajout à l'écran d'accueil)
+const _al=document.createElement('link');_al.rel='apple-touch-icon';_al.href=_ic192;document.head.appendChild(_al);
 // PWA Manifest
-const mf={name:"Allcoms FTTH Terrain",short_name:"FTTH Terrain",start_url:"./",display:"standalone",background_color:"#0a0f1e",theme_color:"#2EC4C4",orientation:"portrait",icons:[{src:"./icons/icon-192.png",sizes:"192x192",type:"image/png",purpose:"any maskable"},{src:"./icons/icon-512.png",sizes:"512x512",type:"image/png",purpose:"any maskable"}]};
+const mf={name:"Allcoms FTTH Terrain",short_name:"FTTH Terrain",start_url:"./",display:"standalone",background_color:"#0a0f1e",theme_color:"#2EC4C4",orientation:"portrait",icons:[{src:_ic192,sizes:"192x192",type:"image/png",purpose:"any maskable"},{src:_ic512,sizes:"512x512",type:"image/png",purpose:"any maskable"}]};
 const mb=new Blob([JSON.stringify(mf)],{type:'application/manifest+json'});
 const ml=document.createElement('link');ml.rel='manifest';ml.href=URL.createObjectURL(mb);document.head.appendChild(ml);
 </script>
@@ -1944,7 +1982,7 @@ function importData(e) {
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=ev=>{
-    try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)&&confirm(`Restaurer ${d.length} compte(s) rendu(s) ?`)){reports=d;localStorage.setItem(SK,JSON.stringify(reports));renderHistory();showToast('Données restaurées ✓');}}
+    try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){reports=d;localStorage.setItem(SK,JSON.stringify(reports));renderHistory();showToast(d.length+' CR restauré(s) ✓');}}
     catch(err){showToast('Fichier invalide','err');}
   };
   r.readAsText(f); e.target.value='';
